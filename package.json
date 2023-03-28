@@ -1,0 +1,24 @@
+{
+  "name": "@vacantthinker/util_typeorm_js",
+  "version": "1.0.0",
+  "description": " util typeorm js",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VacantThinker/util_typeorm_js.git"
+  },
+  "keywords": [
+    "util",
+    "typeorm",
+    "js"
+  ],
+  "author": {
+    "name": "VacantThinker"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/VacantThinker/util_typeorm_js/issues"
+  },
+  "homepage": "https://github.com/VacantThinker/util_typeorm_js#readme"
+}
