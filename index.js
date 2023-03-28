@@ -92,22 +92,47 @@ function geneUtilTypeormJs(
     const mat = filename.match(reg);
     const entityName = mat[0]; // eg: config --> config.entity.js
 
-    let line1 = `  ${entityName}: `;
-    let line2 = `await dataSource.getRepository('${entityName}'),`;
 
-    let line3 = `  ${entityName}Create: await this.${entityName}.create,`;
-    let line4 = `  ${entityName}Save: await this.${entityName}.save,`;
-    let line5 = `  ${entityName}Delete: await this.${entityName}.delete,`;
-    let line6 = `  ${entityName}Merge: await this.${entityName}.merge,`;
-    let line7 = `  ${entityName}FindOneBy: await this.${entityName}.findOneBy,`;
-    let line8 = `  ${entityName}Find: await this.${entityName}.find,`;
+  let line =
+`
+  ${entityName}Repo: async () => {
+    return await dataSource.getRepository('${entityName}');
+  },
+  ${entityName}Post: async (value, callback) => {
+    const createObj = await dataSource.getRepository('${entityName}').create(value);
+    if (typeof callback === 'function') {
+      const handleObj = callback(createObj);
+      return await this.${entityName}Save(handleObj)
+    } else if (callback === null) {
+      return await this.${entityName}Save(value)
+    } else {
+      return null;
+    }
+  },
+  ${entityName}Save: async (value) => {
+    return await dataSource.getRepository('${entityName}').save(value);
+  },
+  ${entityName}Delete: async (value) => {
+    return await dataSource.getRepository('${entityName}').delete(value);
+  },
+  ${entityName}Put: async (value, findKey) => {
+    const findObj = await this.${entityName}FindOneBy(findKey);
+    await dataSource.getRepository('${entityName}').merge(findObj, value);
+    return await this.${entityName}Save(findObj)
+  },
+  ${entityName}FindOneBy: async (value) => {
+    return await dataSource.getRepository('${entityName}').findOneBy(value);
+  },
+  ${entityName}Find: async () => {
+    return await dataSource.getRepository('${entityName}').find();
+  },
+`
 
-    return [line1.concat(line2), line3, line4, line5, line6, line7, line8];
+    return line
   });
 
   let text =
-      `'use strict';
-
+      `
 const {dataSource} = require('./datasource.js');
 
 const table = {
@@ -134,8 +159,7 @@ function geneDataSourceJs(
     pathTarget = getPathByLevelUp();
   }
   let text =
-      `'use strict';
-      
+      `      
 const {DataSource} = require('typeorm');
 const {getEntitySchemaList} = require('./util.datasource.js');
 
@@ -156,9 +180,10 @@ dataSource.initialize().then(() => {
 });
 
 module.exports = {
-  dataSource: dataSource,
+  dataSource: () => {
+    return dataSource
+  },
 };
-
 
 `;
 
@@ -185,12 +210,17 @@ function geneUtilDataSourceJs(
     const mat = filename.match(reg);
     const entityName = mat[0]; // eg: config
 
-    let line1 = `let ${entityName}Obj = `;
-    let line2 = `require('./${dirName}/${entityName}.entity.js');`;
-    let line3 = `  let ${entityName}EntitySchema =`;
-    let line4 = `new EntitySchema(Object.create(configObj));`;
+    let line =
+`
+  let ${entityName}Obj 
+    = require('./${dirName}/${entityName}.entity.js');
+  let ${entityName}EntitySchema 
+    = new EntitySchema(Object.create(${entityName}Obj));
+  entities.push(${entityName}EntitySchema);
 
-    return [line1.concat(line2), line3.concat(line4)];
+`
+
+    return line
   }, (filename) => {
     const reg = /.+(?=\.entity\.js)/;
     const mat = filename.match(reg);
@@ -201,8 +231,7 @@ function geneUtilDataSourceJs(
   });
 
   let text =
-      `'use strict';
-
+      `
 const {EntitySchema} = require('typeorm');
 
 function getEntitySchemaList() {
