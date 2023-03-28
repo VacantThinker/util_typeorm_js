@@ -78,9 +78,12 @@ dataSource.initialize().then(() => {
 });
 
 module.exports = {
-  dataSource: () => {
-    return dataSource
-  },
+  dataSource: dataSource,
+  dbInitValue: (callback) => {
+    dataSource.initialize().then(async (connection) => {
+      callback(connection)
+    })
+  }
 };
 ```
 
@@ -107,10 +110,16 @@ module.exports = {
 
 ```
 
-#### in your app.js (express)
+#### in app.js (express)
 
 ```javascript
-
+dbInitValue(async (connection) => {
+  let findOneBy = await connection.getRepository('config').findOneBy({id: 1});
+  if (findOneBy === null) {
+    let configObj = {xx, xxxxx};
+    connection.getRepository('config').save(configObj);
+  }
+})
 ```
 
 ---

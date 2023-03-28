@@ -73,6 +73,10 @@ function handleTextArr(pathTarget, ...callbacks) {
   return reduce;
 }
 
+/**
+ * gene util.typeorm.js file
+ * @param pathTarget
+ */
 function geneUtilTypeormJs(
     pathTarget = findPathTarget(),
 ) {
@@ -88,6 +92,8 @@ function geneUtilTypeormJs(
 
   let line =
 `
+  // **************************************************************************
+  // ${entityName}.entity.js
   ${entityName}Repo: async () => {
     return await dataSource.getRepository('${entityName}');
   },
@@ -97,7 +103,7 @@ function geneUtilTypeormJs(
       const handleObj = callback(createObj);
       return await this.${entityName}Save(handleObj)
     } else if (callback === null) {
-      return await this.${entityName}Save(value)
+      return await this.${entityName}Save(createObj)
     } else {
       return null;
     }
@@ -119,6 +125,7 @@ function geneUtilTypeormJs(
   ${entityName}Find: async () => {
     return await dataSource.getRepository('${entityName}').find();
   },
+  
 `
 
     return line
@@ -139,6 +146,8 @@ module.exports = {
 
   let file = getPathByLevelUp(pathTarget, stringList.filename_util_typeorm);
   fs.writeFileSync(file, text);
+  console.log(`file=\n`, file, `\n`);
+  console.log(`text=\n`, text, `\n`);
 }
 
 /**
@@ -173,9 +182,12 @@ dataSource.initialize().then(() => {
 });
 
 module.exports = {
-  dataSource: () => {
-    return dataSource
-  },
+  dataSource: dataSource,
+  dbInitValue: (callback) => {
+    dataSource.initialize().then(async (connection) => {
+      callback(connection)
+    })
+  }
 };
 `;
 
