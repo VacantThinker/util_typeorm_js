@@ -52,13 +52,6 @@ function findPathTarget() {
  */
 function handleTextArr(pathTarget, ...callbacks) {
   const textArr = [];
-  const lineEnter = `\n`;
-  textArr.pushItem = function(...values) {
-    values.forEach((value) => {
-      textArr.push(value);
-      textArr.push(lineEnter);
-    });
-  };
 
   const filenameList = fs.readdirSync(pathTarget);
   callbacks.forEach((callback) => {
@@ -66,10 +59,10 @@ function handleTextArr(pathTarget, ...callbacks) {
       const text = callback(filename);
       if (Array.isArray(text)) {
         Array.from(text).forEach((value) => {
-          textArr.pushItem(value);
+          textArr.push(value);
         });
       } else {
-        textArr.pushItem(text);
+        textArr.push(text);
       }
     });
   });
@@ -184,7 +177,6 @@ module.exports = {
     return dataSource
   },
 };
-
 `;
 
   let file = path.join(pathTarget, stringList.filename_datasource);
@@ -221,13 +213,6 @@ function geneUtilDataSourceJs(
 `
 
     return line
-  }, (filename) => {
-    const reg = /.+(?=\.entity\.js)/;
-    const mat = filename.match(reg);
-    const entityName = mat[0]; // eg: config
-
-    let line1 = `  entities.push(${entityName}EntitySchema);`;
-    return line1;
   });
 
   let text =
