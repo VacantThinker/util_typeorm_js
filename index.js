@@ -236,7 +236,7 @@ function geneUtilDataSourceJs(
     const entityName = mat[0]; // eg: config
 
     const line =
-`  const ${entityName}Obj = require('./${dirName}/${entityName}.entity.js');
+`const ${entityName}Obj = require('./${dirName}/${entityName}.entity.js');
   const ${entityName}EntitySchema = new EntitySchema(Object.create(${entityName}Obj));
   entities.push(${entityName}EntitySchema);
 `;
