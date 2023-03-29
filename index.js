@@ -97,16 +97,8 @@ function geneUtilTypeormJs(
   ${entityName}Repo: async () => {
     return await dataSource.getRepository('${entityName}');
   },
-  ${entityName}Post: async (value, callback) => {
-    const createObj = await dataSource.getRepository('${entityName}').create(value);
-    if (typeof callback === 'function') {
-      const handleObj = callback(createObj);
-      return await this.${entityName}Save(handleObj)
-    } else if (callback === null) {
-      return await this.${entityName}Save(createObj)
-    } else {
-      return null;
-    }
+  ${entityName}Create: async (value) => {
+    return await dataSource.getRepository('${entityName}').create(value);
   },
   ${entityName}Save: async (value) => {
     return await dataSource.getRepository('${entityName}').save(value);
@@ -115,9 +107,9 @@ function geneUtilTypeormJs(
     return await dataSource.getRepository('${entityName}').delete(value);
   },
   ${entityName}Put: async (value, findKey) => {
-    const findObj = await this.${entityName}FindOneBy(findKey);
+    const findObj = await dataSource.getRepository('${entityName}').findOneBy(findKey);
     await dataSource.getRepository('${entityName}').merge(findObj, value);
-    return await this.${entityName}Save(findObj)
+    return await dataSource.getRepository('${entityName}').save(findObj)
   },
   ${entityName}FindOneBy: async (value) => {
     return await dataSource.getRepository('${entityName}').findOneBy(value);
