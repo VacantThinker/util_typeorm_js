@@ -13,7 +13,6 @@ const stringList = {
   filename_util_datasource: 'util.datasource.js',
   // 'datasource.js'
   filename_datasource: 'datasource.js',
-
 };
 
 /**
@@ -222,13 +221,9 @@ function geneUtilDataSourceJs(
     const entityName = mat[0]; // eg: config
 
     const line =
-        `
-  const ${entityName}Obj 
-    = require('./${dirName}/${entityName}.entity.js');
-  const ${entityName}EntitySchema 
-    = new EntitySchema(Object.create(${entityName}Obj));
+`  const ${entityName}Obj = require('./${dirName}/${entityName}.entity.js');
+  const ${entityName}EntitySchema = new EntitySchema(Object.create(${entityName}Obj));
   entities.push(${entityName}EntitySchema);
-
 `;
 
     return line;
@@ -249,8 +244,7 @@ module.exports = {
 };
 `;
 
-  const file = getPathByLevelUp(
-      pathTarget, stringList.filename_util_datasource);
+  const file = getPathByLevelUp(pathTarget, stringList.filename_util_datasource);
   fs.writeFileSync(file, text);
   console.log(`file=\n`, file, `\n`);
   console.log(`text=\n`, text, `\n`);

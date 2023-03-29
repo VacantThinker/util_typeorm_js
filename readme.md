@@ -1,10 +1,24 @@
 
 ## how to use ?
 
+#### dir
+```text
+xxxx-project/
+  server/
+    db/
+      entity/
+        config.entity.js
+      
+      datasource.js         <== generator by xxx.js geneTypeormAll()
+      util.datasource.js    <== generator by xxx.js geneTypeormAll()
+      util.typeorm.js       <== generator by xxx.js geneTypeormAll()
+  
+  xxx.js  <== (node xxx.js)
+```
+
 #### in xxx.js
 ```javascript
 const {geneTypeormAll} = require('@vacantthinker/util_typeorm_js');
-
 geneTypeormAll()
 ```
 
@@ -97,10 +111,8 @@ const {EntitySchema} = require('typeorm');
 function getEntitySchemaList() {
   const entities = [];
   
-  let configObj 
-    = require('./entity/config.entity.js');
-  let configEntitySchema 
-    = new EntitySchema(Object.create(configObj));
+  let configObj = require('./entity/config.entity.js');
+  let configEntitySchema = new EntitySchema(Object.create(configObj));
   entities.push(configEntitySchema);
 
   return entities;
@@ -113,8 +125,8 @@ module.exports = {
 ```
 
 #### in app.js (express)
-
 ```javascript
+// init data of database
 dbInitValue(async (connection) => {
   let findOneBy = await connection.getRepository('config').findOneBy({id: 1});
   if (findOneBy === null) {
@@ -122,9 +134,18 @@ dbInitValue(async (connection) => {
     connection.getRepository('config').save(configObj);
   }
 })
-app.listen(3000, () =>{
 
-})
+app.get('/config/:name', async (req, res) => {
+  let {name} = req.params;
+  let config1 = {name};
+  await table.configSave(config1)
+
+  res.send(config1);
+});
+
+app.listen(3000, async () => {
+  console.log(`running 3000`);
+});
 ```
 
 ---
