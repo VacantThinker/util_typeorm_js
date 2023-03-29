@@ -16,6 +16,23 @@ xxxx-project/
   xxx.js  <== (node xxx.js)
 ```
 
+#### config.entity.js
+```javascript
+module.exports = {
+  name: 'config',
+  columns: {
+    id: {
+      primary: true,
+      type: 'int',
+      generated: true,
+    },
+    name: {
+      type: 'varchar', default: '',
+    },
+  },
+};
+```
+
 #### in xxx.js
 ```javascript
 const {geneTypeormAll} = require('@vacantthinker/util_typeorm_js');
@@ -55,13 +72,20 @@ const table = {
     await dataSource.getRepository('config').merge(findObj, value);
     return await dataSource.getRepository('config').save(findObj)
   },
-  // findOneBy(key)
-  configFindOneBy: async (value) => {
-    return await dataSource.getRepository('config').findOneBy(value);
+  // return one ${entityName}
+  ${entityName}FindOneBy: async (searchObj) => {
+    return await dataSource.getRepository('${entityName}').findOneBy(searchObj);
   },
-  // find() ==> return all config
-  configFind: async () => {
-    return await dataSource.getRepository('config').find();
+  // return many ${entityName}
+  ${entityName}FindBy: async (searchObj) => {
+    return await dataSource.getRepository('${entityName}').findBy(searchObj);
+  },
+  // return many ${entityName}
+  ${entityName}FindByLike: async (searchObj) => {
+    const searchKey = Object.keys(searchObj)[0];
+    const searchVal = Object.values(searchObj)[0];
+    searchObj[searchKey] = Like(\`%\${searchVal}%\`);
+    return await dataSource.getRepository('${entityName}').findBy(searchObj);
   },
   
 };

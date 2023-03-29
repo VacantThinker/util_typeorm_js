@@ -117,26 +117,33 @@ function geneUtilTypeormJs(pathTarget = null,) {
     return await dataSource.getRepository('${entityName}');
   },
   // save ${entityName}
-  ${entityName}Save: async (value) => {
-    return await dataSource.getRepository('${entityName}').save(value);
+  ${entityName}Save: async (entityObj) => {
+    return await dataSource.getRepository('${entityName}').save(entityObj);
   },
   // delete ${entityName}
-  ${entityName}Delete: async (value) => {
-    return await dataSource.getRepository('${entityName}').delete(value);
+  ${entityName}Delete: async (searchObj) => {
+    return await dataSource.getRepository('${entityName}').delete(searchObj);
   },
-  // findOneBy(key) ==> merge(findObj, value) ===> save(findObj)
-  ${entityName}Update: async (value, findKey) => {
-    const findObj = await dataSource.getRepository('${entityName}').findOneBy(findKey);
-    await dataSource.getRepository('${entityName}').merge(findObj, value);
+  // update ${entityName}
+  ${entityName}Update: async (entityObj, findByKey) => {
+    const findObj = await dataSource.getRepository('${entityName}').findOneBy(findByKey);
+    await dataSource.getRepository('${entityName}').merge(findObj, entityObj);
     return await dataSource.getRepository('${entityName}').save(findObj)
   },
-  // findOneBy(key)
-  ${entityName}FindOneBy: async (value) => {
-    return await dataSource.getRepository('${entityName}').findOneBy(value);
+  // return one ${entityName}
+  ${entityName}FindOneBy: async (searchObj) => {
+    return await dataSource.getRepository('${entityName}').findOneBy(searchObj);
   },
-  // find() ==> return all ${entityName}
-  ${entityName}Find: async () => {
-    return await dataSource.getRepository('${entityName}').find();
+  // return many ${entityName}
+  ${entityName}FindBy: async (searchObj) => {
+    return await dataSource.getRepository('${entityName}').findBy(searchObj);
+  },
+  // return many ${entityName}
+  ${entityName}FindByLike: async (searchObj) => {
+    const searchKey = Object.keys(searchObj)[0];
+    const searchVal = Object.values(searchObj)[0];
+    searchObj[searchKey] = Like(\`%\${searchVal}%\`);
+    return await dataSource.getRepository('${entityName}').findBy(searchObj);
   },
   
 `;
@@ -148,6 +155,7 @@ function geneUtilTypeormJs(pathTarget = null,) {
       `'use strict';
       
 const {dataSource} = require('./datasource.js');
+const {Like} = require('typeorm');
 
 const table = {
   ${reduce}
