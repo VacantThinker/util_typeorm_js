@@ -1,11 +1,16 @@
 
 ## how to use ?
 
-#### in xxx.js, --> node xxx.js --> generator util.typeorm.js file
+#### in xxx.js
 ```javascript
 const {geneTypeormAll} = require('@vacantthinker/util_typeorm_js');
 
 geneTypeormAll()
+```
+
+#### generator util.typeorm.js datasource.js util.datasource.js
+```shell
+node xxx.js
 ```
 
 #### util.typeorm.js
@@ -15,38 +20,35 @@ const {dataSource} = require('./datasource.js');
 
 const table = {
 
+  // config.entity.js
+  // **************************************************************************
+  // configRepository
   configRepo: async () => {
     return await dataSource.getRepository('config');
   },
-  configPost: async (value, callback) => {
-    const createObj = await dataSource.getRepository('config').create(value);
-    if (typeof callback === 'function') {
-      const handleObj = callback(createObj);
-      return await this.configSave(handleObj);
-    } else if (callback === null) {
-      return await this.configSave(value);
-    } else {
-      return null;
-    }
-  },
+  // save config
   configSave: async (value) => {
     return await dataSource.getRepository('config').save(value);
   },
+  // delete config
   configDelete: async (value) => {
     return await dataSource.getRepository('config').delete(value);
   },
-  configPut: async (value, findKey) => {
-    const findObj = await this.configFindOneBy(findKey);
+  // findOneBy(key) ==> merge(findObj, value) ===> save(findObj)
+  configUpdate: async (value, findKey) => {
+    const findObj = await dataSource.getRepository('config').findOneBy(findKey);
     await dataSource.getRepository('config').merge(findObj, value);
-    return await this.configSave(findObj);
+    return await dataSource.getRepository('config').save(findObj)
   },
+  // findOneBy(key)
   configFindOneBy: async (value) => {
     return await dataSource.getRepository('config').findOneBy(value);
   },
+  // find() ==> return all config
   configFind: async () => {
     return await dataSource.getRepository('config').find();
   },
-
+  
 };
 
 module.exports = {
@@ -119,6 +121,9 @@ dbInitValue(async (connection) => {
     let configObj = {xx, xxxxx};
     connection.getRepository('config').save(configObj);
   }
+})
+app.listen(3000, () =>{
+
 })
 ```
 

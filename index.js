@@ -16,6 +16,17 @@ const stringList = {
 
 };
 
+/**
+ * find dir/ level up
+ *
+ * eg: xxx-project/server/db/entity/
+ *
+ * return xxx-project/server/db/
+ *
+ * @param pathTarget
+ * @param filename
+ * @returns {string}
+ */
 function getPathByLevelUp(
     pathTarget = null,
     filename = null) {
@@ -24,8 +35,8 @@ function getPathByLevelUp(
     pathTarget = findPathTarget();
   }
 
-  let basename = path.basename(pathTarget);
-  let pathLevelUp = pathTarget.replace(basename, '');
+  const basename = path.basename(pathTarget);
+  const pathLevelUp = pathTarget.replace(basename, '');
   if (filename === null) {
     return pathLevelUp;
   } else {
@@ -33,6 +44,10 @@ function getPathByLevelUp(
   }
 }
 
+/**
+ * default: xxx-project/server/db/entity/
+ * @returns {string}
+ */
 function findPathTarget() {
   const pathRoot = process.cwd();
 
@@ -78,7 +93,7 @@ function handleTextArr(pathTarget, ...callbacks) {
  * @param pathTarget
  */
 function geneUtilTypeormJs(
-    pathTarget = findPathTarget(),
+    pathTarget = null,
 ) {
   if (pathTarget === null) {
     pathTarget = findPathTarget();
@@ -89,41 +104,43 @@ function geneUtilTypeormJs(
     const mat = filename.match(reg);
     const entityName = mat[0]; // eg: config --> config.entity.js
 
-
-  let line =
-`
-  // **************************************************************************
+    const line =
+        `
   // ${entityName}.entity.js
+  // **************************************************************************
+  // ${entityName}Repository
   ${entityName}Repo: async () => {
     return await dataSource.getRepository('${entityName}');
   },
-  ${entityName}Create: async (value) => {
-    return await dataSource.getRepository('${entityName}').create(value);
-  },
+  // save ${entityName}
   ${entityName}Save: async (value) => {
     return await dataSource.getRepository('${entityName}').save(value);
   },
+  // delete ${entityName}
   ${entityName}Delete: async (value) => {
     return await dataSource.getRepository('${entityName}').delete(value);
   },
-  ${entityName}Put: async (value, findKey) => {
+  // findOneBy(key) ==> merge(findObj, value) ===> save(findObj)
+  ${entityName}Update: async (value, findKey) => {
     const findObj = await dataSource.getRepository('${entityName}').findOneBy(findKey);
     await dataSource.getRepository('${entityName}').merge(findObj, value);
     return await dataSource.getRepository('${entityName}').save(findObj)
   },
+  // findOneBy(key)
   ${entityName}FindOneBy: async (value) => {
     return await dataSource.getRepository('${entityName}').findOneBy(value);
   },
+  // find() ==> return all ${entityName}
   ${entityName}Find: async () => {
     return await dataSource.getRepository('${entityName}').find();
   },
   
-`
+`;
 
-    return line
+    return line;
   });
 
-  let text =
+  const text =
       `
 const {dataSource} = require('./datasource.js');
 
@@ -136,7 +153,7 @@ module.exports = {
 }
 `;
 
-  let file = getPathByLevelUp(pathTarget, stringList.filename_util_typeorm);
+  const file = getPathByLevelUp(pathTarget, stringList.filename_util_typeorm);
   fs.writeFileSync(file, text);
   console.log(`file=\n`, file, `\n`);
   console.log(`text=\n`, text, `\n`);
@@ -149,10 +166,7 @@ module.exports = {
 function geneDataSourceJs(
     pathTarget = null,
 ) {
-  if (pathTarget === null) {
-    pathTarget = getPathByLevelUp();
-  }
-  let text =
+  const text =
       `      
 const {DataSource} = require('typeorm');
 const {getEntitySchemaList} = require('./util.datasource.js');
@@ -183,7 +197,8 @@ module.exports = {
 };
 `;
 
-  let file = path.join(pathTarget, stringList.filename_datasource);
+  pathTarget = getPathByLevelUp(pathTarget);
+  const file = path.join(pathTarget, stringList.filename_datasource);
   fs.writeFileSync(file, text);
   console.log(`file=\n`, file, `\n`);
   console.log(`text=\n`, text, `\n`);
@@ -206,20 +221,20 @@ function geneUtilDataSourceJs(
     const mat = filename.match(reg);
     const entityName = mat[0]; // eg: config
 
-    let line =
-`
-  let ${entityName}Obj 
+    const line =
+        `
+  const ${entityName}Obj 
     = require('./${dirName}/${entityName}.entity.js');
-  let ${entityName}EntitySchema 
+  const ${entityName}EntitySchema 
     = new EntitySchema(Object.create(${entityName}Obj));
   entities.push(${entityName}EntitySchema);
 
-`
+`;
 
-    return line
+    return line;
   });
 
-  let text =
+  const text =
       `
 const {EntitySchema} = require('typeorm');
 
@@ -234,17 +249,26 @@ module.exports = {
 };
 `;
 
-  let file = getPathByLevelUp(
-      null, stringList.filename_util_datasource);
+  const file = getPathByLevelUp(
+      pathTarget, stringList.filename_util_datasource);
   fs.writeFileSync(file, text);
   console.log(`file=\n`, file, `\n`);
   console.log(`text=\n`, text, `\n`);
 }
 
-function geneTypeormAll() {
-  geneDataSourceJs();
-  geneUtilDataSourceJs();
-  geneUtilTypeormJs();
+/**
+ * please make sure
+ *
+ * you have entity/ dir
+ *
+ * eg: entity/config.entity.js
+ *
+ * @param pathDir entity dir path
+ */
+function geneTypeormAll(pathDir) {
+  geneDataSourceJs(pathDir);
+  geneUtilDataSourceJs(pathDir);
+  geneUtilTypeormJs(pathDir);
 }
 
 module.exports = {
