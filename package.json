@@ -1,6 +1,6 @@
 {
   "name": "@vacantthinker/util_typeorm_js",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": " util typeorm js",
   "main": "index.js",
   "scripts": {},

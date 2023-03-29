@@ -134,6 +134,10 @@ function geneUtilTypeormJs(pathTarget = null,) {
   ${entityName}FindOneBy: async (searchObj) => {
     return await dataSource.getRepository('${entityName}').findOneBy(searchObj);
   },
+  // return all ${entityName}
+  ${entityName}Find: async () => {
+    return await dataSource.getRepository('${entityName}').find();
+  },
   // return many ${entityName}
   ${entityName}FindBy: async (searchObj) => {
     return await dataSource.getRepository('${entityName}').findBy(searchObj);
@@ -239,6 +243,7 @@ function geneUtilDataSourceJs(
 `const ${entityName}Obj = require('./${dirName}/${entityName}.entity.js');
   const ${entityName}EntitySchema = new EntitySchema(Object.create(${entityName}Obj));
   entities.push(${entityName}EntitySchema);
+  
 `;
 
     return line;

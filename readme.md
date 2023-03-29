@@ -76,6 +76,10 @@ const table = {
   ${entityName}FindOneBy: async (searchObj) => {
     return await dataSource.getRepository('${entityName}').findOneBy(searchObj);
   },
+  // return all ${entityName}
+  ${entityName}Find: async (searchObj) => {
+    return await dataSource.getRepository('${entityName}').find();
+  },
   // return many ${entityName}
   ${entityName}FindBy: async (searchObj) => {
     return await dataSource.getRepository('${entityName}').findBy(searchObj);
