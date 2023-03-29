@@ -30,6 +30,7 @@ node xxx.js
 #### util.typeorm.js
 
 ```javascript
+'use strict';
 const {dataSource} = require('./datasource.js');
 
 const table = {
@@ -73,7 +74,7 @@ module.exports = {
 
 #### datasource.js
 ```javascript
-      
+'use strict';
 const {DataSource} = require('typeorm');
 const {getEntitySchemaList} = require('./util.datasource.js');
 
@@ -105,7 +106,7 @@ module.exports = {
 
 #### util.datasource.js
 ```javascript
-
+'use strict';
 const {EntitySchema} = require('typeorm');
 
 function getEntitySchemaList() {

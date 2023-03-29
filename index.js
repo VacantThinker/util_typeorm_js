@@ -60,8 +60,15 @@ function findPathTarget() {
 
 /**
  * create an array, save text
- * @param pathTarget
- * @param callbacks
+ *
+ * return textArray.reduce( (str, value)=>{
+ *
+ *   return str.concat(value)
+ *
+ * }, '')
+ *
+ * @param pathTarget xxx/ dir
+ * @param callbacks calback array
  * @returns {*}
  */
 function handleTextArr(pathTarget, ...callbacks) {
@@ -91,9 +98,7 @@ function handleTextArr(pathTarget, ...callbacks) {
  * gene util.typeorm.js file
  * @param pathTarget
  */
-function geneUtilTypeormJs(
-    pathTarget = null,
-) {
+function geneUtilTypeormJs(pathTarget = null,) {
   if (pathTarget === null) {
     pathTarget = findPathTarget();
   }
@@ -140,7 +145,8 @@ function geneUtilTypeormJs(
   });
 
   const text =
-      `
+      `'use strict';
+      
 const {dataSource} = require('./datasource.js');
 
 const table = {
@@ -166,7 +172,8 @@ function geneDataSourceJs(
     pathTarget = null,
 ) {
   const text =
-      `      
+      `'use strict';
+      
 const {DataSource} = require('typeorm');
 const {getEntitySchemaList} = require('./util.datasource.js');
 
@@ -230,7 +237,8 @@ function geneUtilDataSourceJs(
   });
 
   const text =
-      `
+      `'use strict';
+      
 const {EntitySchema} = require('typeorm');
 
 function getEntitySchemaList() {
