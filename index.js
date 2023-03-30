@@ -112,42 +112,86 @@ function geneUtilTypeormJs(pathTarget = null,) {
         `
   // ${entityName}.entity.js
   // **************************************************************************
-  // ${entityName}Repository
+  /**
+   * ${entityName} repo
+   * @returns {Promise<*>}
+   */
   ${entityName}Repo: async () => {
     return await dataSource.getRepository('${entityName}');
   },
-  // save ${entityName}
+  /**
+   * save ${entityName}
+   * @param entityObj
+   * @returns {Promise<void>}
+   */
   ${entityName}Save: async (entityObj) => {
     return await dataSource.getRepository('${entityName}').save(entityObj);
   },
-  // delete ${entityName}
-  ${entityName}Delete: async (searchObj) => {
-    return await dataSource.getRepository('${entityName}').delete(searchObj);
+  /**
+   * delete ${entityName}
+   * @param options
+   * @returns {Promise<*>}
+   */
+  ${entityName}Delete: async (options) => {
+    return await dataSource.getRepository('${entityName}').delete(options);
   },
-  // update ${entityName}
-  ${entityName}Update: async (entityObj, findByKey) => {
-    const findObj = await dataSource.getRepository('${entityName}').findOneBy(findByKey);
-    await dataSource.getRepository('${entityName}').merge(findObj, entityObj);
+  /**
+   * update ${entityName}
+   * @param entityNew
+   * @param options
+   * @returns {Promise<void>}
+   */
+  ${entityName}Update: async (entityNew, options) => {
+    const findObj = await dataSource.getRepository('${entityName}').findOneBy(options);
+    await dataSource.getRepository('${entityName}').merge(findObj, entityNew);
     return await dataSource.getRepository('${entityName}').save(findObj)
   },
-  // return one ${entityName}
-  ${entityName}FindOneBy: async (searchObj) => {
-    return await dataSource.getRepository('${entityName}').findOneBy(searchObj);
+  /**
+   * {id: 1}
+   * @param options
+   * @returns {Promise<*>} findObj
+   */
+  ${entityName}FindOneWhere: async (options) => {
+    return await dataSource.getRepository('${entityName}').findOneBy(options);
   },
-  // return all ${entityName}
-  ${entityName}Find: async () => {
-    return await dataSource.getRepository('${entityName}').find();
+  /**
+   * {select: {name: 'mari'}, where: {id: 1}}
+   * @param options
+   * @returns {Promise<*>} findObj
+   */
+  ${entityName}FindOne: async (options) => {
+    return await dataSource.getRepository('${entityName}').findOne(options);
   },
-  // return many ${entityName}
-  ${entityName}FindBy: async (searchObj) => {
-    return await dataSource.getRepository('${entityName}').findBy(searchObj);
+  /**
+   * null or {select: {name: 'mari'}, where: {id: 1}}
+   * @param options
+   * @returns {Promise<*>}
+   */
+  ${entityName}Find: async (options) => {
+    if (options === null) {
+      return await dataSource.getRepository('video').find();
+    }else {
+      return await dataSource.getRepository('video').find(options);
+    }
   },
-  // return many ${entityName}
-  ${entityName}FindByLike: async (searchObj) => {
-    const searchKey = Object.keys(searchObj)[0];
-    const searchVal = Object.values(searchObj)[0];
-    searchObj[searchKey] = Like(\`%\${searchVal}%\`);
-    return await dataSource.getRepository('${entityName}').findBy(searchObj);
+  /**
+   * {id: 1}
+   * @param options
+   * @returns {Promise<*>}
+   */
+  ${entityName}FindWhere: async (options) => {
+    return await dataSource.getRepository('${entityName}').findBy(options);
+  },
+  /**
+   * {name: 'mari'} to {name: Like('%mari%')}
+   * @param options
+   * @returns {Promise<*>}
+   */
+  ${entityName}FindWhereLike: async (options) => {
+    const searchKey = Object.keys(options)[0];
+    const searchVal = Object.values(options)[0];
+    options[searchKey] = Like(\`%\${searchVal}%\`);
+    return await dataSource.getRepository('${entityName}').findBy(options);
   },
   
 `;
@@ -194,7 +238,7 @@ const dataSource = new DataSource({
   type: 'better-sqlite3',
   database: 'db.sqlite',
   synchronize: true,
-  logging: true,
+  logging: false,
   entities,
 });
 
@@ -240,7 +284,7 @@ function geneUtilDataSourceJs(
     const entityName = mat[0]; // eg: config
 
     const line =
-`const ${entityName}Obj = require('./${dirName}/${entityName}.entity.js');
+        `  const ${entityName}Obj = require('./${dirName}/${entityName}.entity.js');
   const ${entityName}EntitySchema = new EntitySchema(Object.create(${entityName}Obj));
   entities.push(${entityName}EntitySchema);
   
@@ -256,7 +300,7 @@ const {EntitySchema} = require('typeorm');
 
 function getEntitySchemaList() {
   const entities = [];
-  ${reduce}
+${reduce}
   return entities;
 }
 
