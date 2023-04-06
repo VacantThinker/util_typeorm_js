@@ -39,7 +39,7 @@ const {geneTypeormAll} = require('@vacantthinker/util_typeorm_js');
 geneTypeormAll()
 ```
 
-#### generator util.typeorm.js datasource.js util.datasource.js
+#### generate util.typeorm.js datasource.js util.datasource.js
 ```shell
 node xxx.js
 ```
