@@ -7,6 +7,9 @@ const stringList = {
   string_db: 'db',
   // 'server'
   string_entity: 'entity',
+  // 'db.sqlite'
+  string_db_sqlite3: 'db.sqlite',
+
   // 'util.typeorm.js'
   filename_util_typeorm: 'util.typeorm.js',
   // 'util.datasource.js'
@@ -114,7 +117,7 @@ function geneUtilTypeormJs(pathTarget = null,) {
   // **************************************************************************
   /**
    * ${entityName} repo
-   * @returns {Promise<*>}
+   * @returns {Promise<Repository>}
    */
   ${entityName}Repo: async () => {
     return await dataSource.getRepository('${entityName}');
@@ -122,13 +125,13 @@ function geneUtilTypeormJs(pathTarget = null,) {
   /**
    * save ${entityName}
    * @param entityObj
-   * @returns {Promise<void>}
+   * @returns {Promise<Object>}
    */
-  ${entityName}Save: async (entityObj) => {
-    return await dataSource.getRepository('${entityName}').save(entityObj);
+  ${entityName}Insert: async (entityObj) => {
+    await dataSource.getRepository('${entityName}').insert(entityObj);
   },
   /**
-   * delete ${entityName}
+   * {id: 1}
    * @param options
    * @returns {Promise<*>}
    */
@@ -136,10 +139,10 @@ function geneUtilTypeormJs(pathTarget = null,) {
     return await dataSource.getRepository('${entityName}').delete(options);
   },
   /**
-   * update ${entityName}
+   * {id: 1}
    * @param entityNew
    * @param options
-   * @returns {Promise<void>}
+   * @returns {Promise<Object>}
    */
   ${entityName}Update: async (entityNew, options) => {
     const findObj = await dataSource.getRepository('${entityName}').findOneBy(options);
@@ -149,7 +152,7 @@ function geneUtilTypeormJs(pathTarget = null,) {
   /**
    * {id: 1}
    * @param options
-   * @returns {Promise<*>} findObj
+   * @returns {Promise<Object>}
    */
   ${entityName}FindOneWhere: async (options) => {
     return await dataSource.getRepository('${entityName}').findOneBy(options);
@@ -157,7 +160,7 @@ function geneUtilTypeormJs(pathTarget = null,) {
   /**
    * {select: {name: 'mari'}, where: {id: 1}}
    * @param options
-   * @returns {Promise<*>} findObj
+   * @returns {Promise<Object>}
    */
   ${entityName}FindOne: async (options) => {
     return await dataSource.getRepository('${entityName}').findOne(options);
@@ -165,19 +168,19 @@ function geneUtilTypeormJs(pathTarget = null,) {
   /**
    * null or {select: {name: 'mari'}, where: {id: 1}}
    * @param options
-   * @returns {Promise<*>}
+   * @returns {Promise<Array>}
    */
   ${entityName}Find: async (options) => {
     if (options === null) {
-      return await dataSource.getRepository('video').find();
+      return await dataSource.getRepository('${entityName}').find();
     }else {
-      return await dataSource.getRepository('video').find(options);
+      return await dataSource.getRepository('${entityName}').find(options);
     }
   },
   /**
    * {id: 1}
    * @param options
-   * @returns {Promise<*>}
+   * @returns {Promise<Array>}
    */
   ${entityName}FindWhere: async (options) => {
     return await dataSource.getRepository('${entityName}').findBy(options);
@@ -185,7 +188,7 @@ function geneUtilTypeormJs(pathTarget = null,) {
   /**
    * {name: 'mari'} to {name: Like('%mari%')}
    * @param options
-   * @returns {Promise<*>}
+   * @returns {Promise<Array>}
    */
   ${entityName}FindWhereLike: async (options) => {
     const searchKey = Object.keys(options)[0];
@@ -227,19 +230,22 @@ module.exports = {
 function geneDataSourceJs(
     pathTarget = null,
 ) {
+
   const text =
       `'use strict';
       
 const {DataSource} = require('typeorm');
-const {getEntitySchemaList} = require('./util.datasource.js');
+const {
+  getEntitySchemaList, 
+  getDatabasePath
+} = require('./util.datasource.js');
 
-const entities = getEntitySchemaList();
 const dataSource = new DataSource({
   type: 'better-sqlite3',
-  database: 'db.sqlite',
+  database: getDatabasePath(),
   synchronize: true,
   logging: false,
-  entities,
+  entities: getEntitySchemaList(),
 });
 
 dataSource.initialize().then(() => {
@@ -259,6 +265,9 @@ module.exports = {
 };
 `;
 
+  if (pathTarget === null) {
+    pathTarget = findPathTarget();
+  }
   pathTarget = getPathByLevelUp(pathTarget);
   const file = path.join(pathTarget, stringList.filename_datasource);
   fs.writeFileSync(file, text);
@@ -296,20 +305,31 @@ function geneUtilDataSourceJs(
   const text =
       `'use strict';
       
-const {EntitySchema} = require('typeorm');
-
 function getEntitySchemaList() {
+  const {EntitySchema} = require('typeorm');
   const entities = [];
+
 ${reduce}
   return entities;
 }
 
+function getDatabasePath() {
+  const path = require('path');
+  const homedir = require('os').homedir();
+  let dbLocaltion = path.join(homedir,
+    'AppData', 'Roaming', 'youtube_playlist_download_queue',
+    'dbsqlite3', 'db.sqlite');
+  return dbLocaltion;
+}
+
 module.exports = {
   getEntitySchemaList: getEntitySchemaList,
+  getDatabasePath: getDatabasePath,
 };
 `;
 
-  const file = getPathByLevelUp(pathTarget, stringList.filename_util_datasource);
+  const file = getPathByLevelUp(pathTarget,
+      stringList.filename_util_datasource);
   fs.writeFileSync(file, text);
   console.log(`file=\n`, file, `\n`);
   console.log(`text=\n`, text, `\n`);
