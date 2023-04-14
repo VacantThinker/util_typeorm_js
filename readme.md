@@ -55,22 +55,22 @@ const table = {
   // config.entity.js
   // **************************************************************************
   /**
-   * 
-   * @returns {Promise<*>}
+   * config repo
+   * @returns {Promise<Repository>}
    */
   configRepo: async () => {
     return await dataSource.getRepository('config');
   },
   /**
-   * 
+   * save config
    * @param entityObj
    * @returns {Promise<void>}
    */
-  configSave: async (entityObj) => {
-    return await dataSource.getRepository('config').save(entityObj);
+  configInsert: async (entityObj) => {
+    await dataSource.getRepository('config').insert(entityObj);
   },
   /**
-   * 
+   * {id: 1}
    * @param options
    * @returns {Promise<*>}
    */
@@ -78,48 +78,58 @@ const table = {
     return await dataSource.getRepository('config').delete(options);
   },
   /**
-   * 
-   * @param entityNew
+   * configNew, {id: 1}
+   * @param configNew
    * @param options
+   * @returns {Promise<{"id":"number","savelocation":"string","tmplocation":"string","appdatacache":"string"}>}
+   */
+  configUpdate: async (configNew, options) => {
+    await dataSource.getRepository('config').update(options, configNew);
+    return await dataSource.getRepository('config').findOneBy(options);
+  },
+  /**
+   * {} --> updateall
+   *
+   * @param configNew
    * @returns {Promise<void>}
    */
-  configUpdate: async (entityNew, options) => {
-    const findObj = await dataSource.getRepository('config').findOneBy(options);
-    await dataSource.getRepository('config').merge(findObj, entityNew);
-    return await dataSource.getRepository('config').save(findObj)
+  configUpdateAll: async (configNew) => {
+    await dataSource.getRepository('config').update({}, configNew);
   },
   /**
    * {id: 1}
    * @param options
-   * @returns {Promise<*>} findObj
+   * @returns {Promise<null|{"id":"number","savelocation":"string","tmplocation":"string","appdatacache":"string"}>}
    */
   configFindOneWhere: async (options) => {
-    return await dataSource.getRepository('config').findOneBy(options);
+    let ret = await dataSource.getRepository('config').findOneBy(options);
+    return ret ? ret : null;
   },
   /**
    * {select: {name: 'mari'}, where: {id: 1}}
    * @param options
-   * @returns {Promise<*>} findObj
+   * @returns {Promise<null|{"id":"number","savelocation":"string","tmplocation":"string","appdatacache":"string"}>}
    */
   configFindOne: async (options) => {
-    return await dataSource.getRepository('config').findOne(options);
+    let ret = await dataSource.getRepository('config').findOne(options);
+    return ret ? ret : null;
   },
   /**
    * null or {select: {name: 'mari'}, where: {id: 1}}
    * @param options
-   * @returns {Promise<*>}
+   * @returns {Promise<[{"id":"number","savelocation":"string","tmplocation":"string","appdatacache":"string"}]>}
    */
   configFind: async (options) => {
     if (options === null) {
-      return await dataSource.getRepository('video').find();
-    }else {
-      return await dataSource.getRepository('video').find(options);
+      return await dataSource.getRepository('config').find();
+    } else {
+      return await dataSource.getRepository('config').find(options);
     }
   },
   /**
    * {id: 1}
    * @param options
-   * @returns {Promise<*>}
+   * @returns {Promise<[{"id":"number","savelocation":"string","tmplocation":"string","appdatacache":"string"}]>}
    */
   configFindWhere: async (options) => {
     return await dataSource.getRepository('config').findBy(options);
@@ -127,7 +137,7 @@ const table = {
   /**
    * {name: 'mari'} to {name: Like('%mari%')}
    * @param options
-   * @returns {Promise<*>}
+   * @returns {Promise<[{"id":"number","savelocation":"string","tmplocation":"string","appdatacache":"string"}]>}
    */
   configFindWhereLike: async (options) => {
     const searchKey = Object.keys(options)[0];
