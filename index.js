@@ -4,12 +4,10 @@ const path = require('path');
 const stringList = {
   // 'server'
   string_server: 'server',
-  // 'server'
+  // 'db'
   string_db: 'db',
-  // 'server'
+  // 'entity'
   string_entity: 'entity',
-  // 'db.sqlite'
-  string_db_sqlite3: 'db.sqlite',
 
   // 'util.typeorm.js'
   filename_util_typeorm: 'util.typeorm.js',
@@ -101,34 +99,95 @@ function convertType(dbtype) {
   return typeObj[dbtype];
 }
 
-function convertEntityToResultType(pathTarget, filename) {
-  const requirePath = path.join(pathTarget, filename);
-  const entityObj = require(requirePath);
-  const retObj = {};
-  Object.keys(entityObj.columns).forEach((key_) => {
-    let val = entityObj.columns[key_];
+/**
+ *
+ * @param entityObj
+ * @returns {{key_: string, value_: *}}
+ */
+function findPrimaryKey(entityObj) {
+  let find = Object.keys(entityObj.columns)
+    .find((key_) => {
+      let value_ = entityObj.columns[key_];
+      if (value_.hasOwnProperty('primary')) {
+        let primaryVal = value_.primary;
+        if (primaryVal === true) {
+          return key_;
+        }
+      }
+    });
+  let val = entityObj.columns[find];
+  return {key_: find, value_: val};
+}
+
+function convertEntity(entityObj) {
+  let {key_: find, value_} = findPrimaryKey(entityObj);
+
+  let o = entityObj.columns;
+  let ret = [];
+  ret.push('{');
+  Object.keys(o).forEach((key_) => {
+    let val = o[String(key_)];
     let jstype = convertType(val.type);
-    retObj[key_] = jstype;
+    let arr = [`${key_}?`, ':', ' ', jstype, ',', ' '];
+    ret.push(...arr);
   });
-  console.log('meslog ', `retObj=\n`, retObj);
-  const retstring = JSON.stringify(retObj, null, '');
-  return retstring;
+  ret.push('}');
+  let reduce = ret.reduce((str, value) => {
+    return str.concat(value);
+  }, '');
+
+  return reduce;
+}
+
+function convertEntityToResultType(entityObj) {
+  let {key_: find, value_} = findPrimaryKey(entityObj);
+
+  let o = entityObj.columns;
+  let ret = [];
+  ret.push('{');
+  delete entityObj.columns[find];
+  let arrPk = [`${find}?`, ':', ' ', convertType(value_.type), ',', ' '];
+  ret.push(...arrPk);
+
+  Object.keys(o).forEach((key_) => {
+    let val = o[String(key_)];
+    let jstype = convertType(val.type);
+    let arr = [key_, ':', ' ', jstype, ',', ' '];
+    ret.push(...arr);
+  });
+  entityObj.columns[find] = value_;
+  ret.push('}');
+  let reduce = ret.reduce((str, value) => {
+    return str.concat(value);
+  }, '');
+
+  console.log(`meslog reduce=\n`, reduce);
+
+  return reduce;
 }
 
 /**
  * gene util.typeorm.js file
- * @param pathTarget
+ * @param pathDirEntity
+ * @param pathDirGeneFile
  */
-function geneUtilTypeormJs(pathTarget = null) {
-  if (pathTarget === null) {
-    pathTarget = findPathTarget();
+function geneUtilTypeormJs(
+  pathDirEntity = null,
+  pathDirGeneFile = null,
+) {
+  if (pathDirEntity === null) {
+    pathDirEntity = findPathTarget();
   }
 
-  const reduce = handleTextArr(pathTarget, (filename) => {
-    const reg = /.+(?=\.entity\.js)/;
-    const mat = filename.match(reg);
-    const entityName = mat[0]; // eg: config --> config.entity.js
-    const retstring = convertEntityToResultType(pathTarget, filename);
+  const reduce = handleTextArr(pathDirEntity, (filename) => {
+    const requirePath = path.join(pathDirEntity, filename);
+    const entityObj = Object.assign({}, require(requirePath));
+
+    const entityName = entityObj.name;
+    const entityInsertString = convertEntityToResultType(entityObj);
+    const entityUpdateString = convertEntity(entityObj);
+
+    const dbTableString = `await dataSource.getRepository('${entityName}')`;
 
     const line =
       `
@@ -139,15 +198,15 @@ function geneUtilTypeormJs(pathTarget = null) {
    * @returns {Promise<Repository>}
    */
   ${entityName}Repo: async () => {
-    return await dataSource.getRepository('${entityName}');
+    return ${dbTableString};
   },
   /**
-   * save ${entityName}
-   * @param entityObj
+   * Insert ${entityName}
+   * @param entityObj {Object:${entityUpdateString}}
    * @returns {Promise<void>}
    */
   ${entityName}Insert: async (entityObj) => {
-    await dataSource.getRepository('${entityName}').insert(entityObj);
+    ${dbTableString}.insert(entityObj);
   },
   /**
    * {id: 1}
@@ -155,75 +214,75 @@ function geneUtilTypeormJs(pathTarget = null) {
    * @returns {Promise<*>}
    */
   ${entityName}Delete: async (options) => {
-    return await dataSource.getRepository('${entityName}').delete(options);
+    return ${dbTableString}.delete(options);
   },
   /**
    * ${entityName}New, {id: 1}
-   * @param ${entityName}New
+   * @param ${entityName}New {Object:${entityUpdateString}}
    * @param options
-   * @returns {Promise<${retstring}>}
+   * @returns {Promise<${entityInsertString}>}
    */
   ${entityName}Update: async (${entityName}New, options) => {
-    await dataSource.getRepository('${entityName}').update(options, ${entityName}New)
-    return await dataSource.getRepository('${entityName}').findOneBy(options);
+    ${dbTableString}.update(options, ${entityName}New);
+    return ${dbTableString}.findOneBy(options);
   },
   /**
-   * {} --> updateall
+   * {xxxxx: false}
    * 
-   * @param ${entityName}New
+   * @param ${entityName}New {Object:${entityUpdateString}}
    * @returns {Promise<void>}
    */
   ${entityName}UpdateAll: async (${entityName}New) => {
-    await dataSource.getRepository('${entityName}').update({}, ${entityName}New)
+    ${dbTableString}.update({}, ${entityName}New);
   },
   /**
    * {id: 1}
-   * @param options
-   * @returns {Promise<null|${retstring}>}
+   * @param options {Object:${entityUpdateString}}
+   * @returns {Promise<null|${entityInsertString}>}
    */
   ${entityName}FindOneWhere: async (options) => {
-    let ret = await dataSource.getRepository('${entityName}').findOneBy(options);
-    return ret ? ret : null
+    let ret = ${dbTableString}.findOneBy(options);
+    return ret ? ret : null;
   },
   /**
-   * {select: {name: 'mari'}, where: {id: 1}}
-   * @param options
-   * @returns {Promise<null|${retstring}>}
+   * {select: {name: 'mary'}, where: {id: 1}}
+   * @param options {Object:${entityUpdateString}}
+   * @returns {Promise<null|${entityInsertString}>}
    */
   ${entityName}FindOne: async (options) => {
-    let ret = await dataSource.getRepository('${entityName}').findOne(options);
-    return ret ? ret : null
+    let ret = ${dbTableString}.findOne(options);
+    return ret ? ret : null;
   },
   /**
-   * null or {select: {name: 'mari'}, where: {id: 1}}
+   * null or {select: {name: 'mary'}, where: {id: 1}}
    * @param options
-   * @returns {Promise<[${retstring}]>}
+   * @returns {Promise<[${entityInsertString}]>}
    */
   ${entityName}Find: async (options) => {
     if (options === null) {
-      return await dataSource.getRepository('${entityName}').find();
+      return ${dbTableString}.find();
     }else {
-      return await dataSource.getRepository('${entityName}').find(options);
+      return ${dbTableString}.find(options);
     }
   },
   /**
    * {id: 1}
    * @param options
-   * @returns {Promise<[${retstring}]>}
+   * @returns {Promise<[${entityUpdateString}]>}
    */
   ${entityName}FindWhere: async (options) => {
-    return await dataSource.getRepository('${entityName}').findBy(options);
+    return ${dbTableString}.findBy(options);
   },
   /**
-   * {name: 'mari'} to {name: Like('%mari%')}
+   * {name: 'mary'} to {name: Like('%mari%')}
    * @param options
-   * @returns {Promise<[${retstring}]>}
+   * @returns {Promise<[${entityInsertString}]>}
    */
   ${entityName}FindWhereLike: async (options) => {
     const searchKey = Object.keys(options)[0];
     const searchVal = Object.values(options)[0];
     options[searchKey] = Like(\`%\${searchVal}%\`);
-    return await dataSource.getRepository('${entityName}').findBy(options);
+    return ${dbTableString}.findBy(options);
   },
   
 `;
@@ -246,7 +305,12 @@ module.exports = {
 }
 `;
 
-  const file = getPathByLevelUp(pathTarget, stringList.filename_util_typeorm);
+  if (pathDirGeneFile === null) {
+    pathDirGeneFile = getPathByLevelUp(pathDirEntity)
+  }
+
+  const file = path.join(pathDirGeneFile,
+    stringList.filename_util_typeorm);
   fs.writeFileSync(file, text);
   console.log(`file=\n`, file, `\n`);
   console.log(`text=\n`, text, `\n`);
@@ -254,10 +318,12 @@ module.exports = {
 
 /**
  * generator datasource.js file
- * @param pathTarget
+ * @param pathDirEntity
+ * @param pathDirGeneFile
  */
 function geneDataSourceJs(
-  pathTarget = null,
+  pathDirEntity = null,
+  pathDirGeneFile = null,
 ) {
 
   const text =
@@ -287,17 +353,20 @@ module.exports = {
   dataSource: dataSource,
   dbInitValue: (callback) => {
     dataSource.initialize().then(async (connection) => {
-      callback(connection)
+      callback(connection);
     })
   }
 };
 `;
 
-  if (pathTarget === null) {
-    pathTarget = findPathTarget();
+  if (pathDirEntity === null) {
+    pathDirEntity = findPathTarget();
   }
-  pathTarget = getPathByLevelUp(pathTarget);
-  const file = path.join(pathTarget, stringList.filename_datasource);
+  if (pathDirGeneFile === null) {
+    pathDirGeneFile = getPathByLevelUp(pathDirEntity);
+  }
+
+  const file = path.join(pathDirGeneFile, stringList.filename_datasource);
   fs.writeFileSync(file, text);
   console.log(`file=\n`, file, `\n`);
   console.log(`text=\n`, text, `\n`);
@@ -305,20 +374,23 @@ module.exports = {
 
 /**
  * generator util.datasource.js file
- * @param pathTarget
+ * @param pathDirEntity
+ * @param pathDirGeneFile
  */
 function geneUtilDataSourceJs(
-  pathTarget = null,
+  pathDirEntity = null,
+  pathDirGeneFile = null,
 ) {
-  if (pathTarget === null) {
-    pathTarget = findPathTarget();
+  if (pathDirEntity === null) {
+    pathDirEntity = findPathTarget();
   }
 
   const dirName = stringList.string_entity;
-  const reduce = handleTextArr(pathTarget, (filename) => {
-    const reg = /.+(?=\.entity\.js)/;
-    const mat = filename.match(reg);
-    const entityName = mat[0]; // eg: config
+  const reduce = handleTextArr(pathDirEntity, (filename) => {
+    const requirePath = path.join(pathDirEntity, filename);
+    const entityObj = Object.assign({}, require(requirePath));
+
+    const entityName = entityObj.name;
 
     const line =
       `  const ${entityName}Obj = require('./${dirName}/${entityName}.entity.js');
@@ -346,7 +418,11 @@ module.exports = {
 };
 `;
 
-  const file = getPathByLevelUp(pathTarget,
+  if (pathDirGeneFile === null) {
+    pathDirGeneFile = getPathByLevelUp(pathDirEntity)
+  }
+
+  const file = path.join(pathDirGeneFile,
     stringList.filename_util_datasource);
   fs.writeFileSync(file, text);
   console.log(`file=\n`, file, `\n`);
@@ -354,18 +430,24 @@ module.exports = {
 }
 
 /**
- * please make sure
  *
- * you have entity/ dir
+ * default: xxx-project/server/db/entity/
+ *
+ * please make sure you have entity/ dir
  *
  * eg: entity/config.entity.js
  *
- * @param pathDir entity dir path
+ * @param pathDirEntity entity dir path
+ * @param pathDirGeneFile
  */
-function geneTypeormAll(pathDir) {
-  geneDataSourceJs(pathDir);
-  geneUtilDataSourceJs(pathDir);
-  geneUtilTypeormJs(pathDir);
+function geneTypeormAll(
+  pathDirEntity = null,
+  pathDirGeneFile = null
+) {
+
+  geneDataSourceJs(pathDirEntity, pathDirGeneFile);
+  geneUtilDataSourceJs(pathDirEntity, pathDirGeneFile);
+  geneUtilTypeormJs(pathDirEntity, pathDirGeneFile);
 }
 
 module.exports = {

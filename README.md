@@ -1,7 +1,7 @@
 
 ## how to use ?
 
-#### dir
+#### example: dir
 ```text
 xxxx-project/
   server/
@@ -9,9 +9,9 @@ xxxx-project/
       entity/
         config.entity.js
       
-      datasource.js         <== generator by xxx.js geneTypeormAll()
-      util.datasource.js    <== generator by xxx.js geneTypeormAll()
-      util.typeorm.js       <== generator by xxx.js geneTypeormAll()
+      datasource.js         <== generate by xxx.js geneTypeormAll()
+      util.datasource.js    <== generate by xxx.js geneTypeormAll()
+      util.typeorm.js       <== generate by xxx.js geneTypeormAll()
   
   xxx.js  <== (node xxx.js)
 ```
@@ -26,7 +26,13 @@ module.exports = {
       type: 'int',
       generated: true,
     },
-    name: {
+    savelocation: {
+      type: 'varchar', default: '',
+    },
+    tmplocation: {
+      type: 'varchar', default: '',
+    },
+    appdatacache: {
       type: 'varchar', default: '',
     },
   },
@@ -35,8 +41,17 @@ module.exports = {
 
 #### in xxx.js
 ```javascript
+// use default path
 const {geneTypeormAll} = require('@vacantthinker/util_typeorm_js');
-geneTypeormAll()
+geneTypeormAll(); // default: xxx-project/server/db/entity/
+```
+```javascript
+// use custom path
+const path = require('path');
+
+let pathDirEntity = path.join(__dirname, 'entity');
+let pathDirGeneFile = path.join(__dirname, 'server', 'db');
+geneTypeormAll(pathDirEntity, pathDirGeneFile,);
 ```
 
 #### generate util.typeorm.js datasource.js util.datasource.js
@@ -62,8 +77,8 @@ const table = {
     return await dataSource.getRepository('config');
   },
   /**
-   * save config
-   * @param entityObj
+   * Insert config
+   * @param entityObj {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
    * @returns {Promise<void>}
    */
   configInsert: async (entityObj) => {
@@ -79,18 +94,18 @@ const table = {
   },
   /**
    * configNew, {id: 1}
-   * @param configNew
+   * @param configNew {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
    * @param options
-   * @returns {Promise<{"id":"number","savelocation":"string","tmplocation":"string","appdatacache":"string"}>}
+   * @returns {Promise<{id?: number, savelocation: string, tmplocation: string, appdatacache: string, }>}
    */
   configUpdate: async (configNew, options) => {
     await dataSource.getRepository('config').update(options, configNew);
     return await dataSource.getRepository('config').findOneBy(options);
   },
   /**
-   * {} --> updateall
+   * {xxxxx: false}
    *
-   * @param configNew
+   * @param configNew {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
    * @returns {Promise<void>}
    */
   configUpdateAll: async (configNew) => {
@@ -98,46 +113,46 @@ const table = {
   },
   /**
    * {id: 1}
-   * @param options
-   * @returns {Promise<null|{"id":"number","savelocation":"string","tmplocation":"string","appdatacache":"string"}>}
+   * @param options {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
+   * @returns {Promise<null|{id?: number, savelocation: string, tmplocation: string, appdatacache: string, }>}
    */
   configFindOneWhere: async (options) => {
     let ret = await dataSource.getRepository('config').findOneBy(options);
     return ret ? ret : null;
   },
   /**
-   * {select: {name: 'mari'}, where: {id: 1}}
-   * @param options
-   * @returns {Promise<null|{"id":"number","savelocation":"string","tmplocation":"string","appdatacache":"string"}>}
+   * {select: {name: 'mary'}, where: {id: 1}}
+   * @param options {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
+   * @returns {Promise<null|{id?: number, savelocation: string, tmplocation: string, appdatacache: string, }>}
    */
   configFindOne: async (options) => {
     let ret = await dataSource.getRepository('config').findOne(options);
     return ret ? ret : null;
   },
   /**
-   * null or {select: {name: 'mari'}, where: {id: 1}}
+   * null or {select: {name: 'mary'}, where: {id: 1}}
    * @param options
-   * @returns {Promise<[{"id":"number","savelocation":"string","tmplocation":"string","appdatacache":"string"}]>}
+   * @returns {Promise<[{id?: number, savelocation: string, tmplocation: string, appdatacache: string, }]>}
    */
   configFind: async (options) => {
     if (options === null) {
       return await dataSource.getRepository('config').find();
-    } else {
+    }else {
       return await dataSource.getRepository('config').find(options);
     }
   },
   /**
    * {id: 1}
    * @param options
-   * @returns {Promise<[{"id":"number","savelocation":"string","tmplocation":"string","appdatacache":"string"}]>}
+   * @returns {Promise<[{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }]>}
    */
   configFindWhere: async (options) => {
     return await dataSource.getRepository('config').findBy(options);
   },
   /**
-   * {name: 'mari'} to {name: Like('%mari%')}
+   * {name: 'mary'} to {name: Like('%mari%')}
    * @param options
-   * @returns {Promise<[{"id":"number","savelocation":"string","tmplocation":"string","appdatacache":"string"}]>}
+   * @returns {Promise<[{id?: number, savelocation: string, tmplocation: string, appdatacache: string, }]>}
    */
   configFindWhereLike: async (options) => {
     const searchKey = Object.keys(options)[0];
