@@ -9,7 +9,8 @@ node_modules
 yarn.lock
 yarn-error.log
 
+# custom
+tmp.js
 zinstall.md
-
 *.sh
 *.tgz

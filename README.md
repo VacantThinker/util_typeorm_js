@@ -86,7 +86,7 @@ const table = {
   },
   /**
    * {id: 1}
-   * @param options
+   * @param options {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
    * @returns {Promise<*>}
    */
   configDelete: async (options) => {
@@ -95,7 +95,7 @@ const table = {
   /**
    * configNew, {id: 1}
    * @param configNew {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
-   * @param options
+   * @param options {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
    * @returns {Promise<{id?: number, savelocation: string, tmplocation: string, appdatacache: string, }>}
    */
   configUpdate: async (configNew, options) => {
@@ -122,7 +122,7 @@ const table = {
   },
   /**
    * {select: {name: 'mary'}, where: {id: 1}}
-   * @param options {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
+   * @param options {select: {savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }, where: {savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
    * @returns {Promise<null|{id?: number, savelocation: string, tmplocation: string, appdatacache: string, }>}
    */
   configFindOne: async (options) => {
@@ -131,10 +131,10 @@ const table = {
   },
   /**
    * null or {select: {name: 'mary'}, where: {id: 1}}
-   * @param options
+   * @param options {null|{select: {savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }, where: {savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}}
    * @returns {Promise<[{id?: number, savelocation: string, tmplocation: string, appdatacache: string, }]>}
    */
-  configFind: async (options) => {
+  configFind: async (options = null) => {
     if (options === null) {
       return await dataSource.getRepository('config').find();
     }else {
@@ -143,7 +143,7 @@ const table = {
   },
   /**
    * {id: 1}
-   * @param options
+   * @param options {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
    * @returns {Promise<[{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }]>}
    */
   configFindWhere: async (options) => {
@@ -151,7 +151,7 @@ const table = {
   },
   /**
    * {name: 'mary'} to {name: Like('%mari%')}
-   * @param options
+   * @param options {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
    * @returns {Promise<[{id?: number, savelocation: string, tmplocation: string, appdatacache: string, }]>}
    */
   configFindWhereLike: async (options) => {
@@ -204,9 +204,9 @@ module.exports = {
 #### util.datasource.js
 ```javascript
 'use strict';
-const {EntitySchema} = require('typeorm');
 
 function getEntitySchemaList() {
+  const {EntitySchema} = require('typeorm');
   const entities = [];
   
   let configObj = require('./entity/config.entity.js');

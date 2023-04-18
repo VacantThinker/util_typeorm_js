@@ -210,7 +210,7 @@ function geneUtilTypeormJs(
   },
   /**
    * {id: 1}
-   * @param options
+   * @param options {Object:${entityUpdateString}}
    * @returns {Promise<*>}
    */
   ${entityName}Delete: async (options) => {
@@ -219,7 +219,7 @@ function geneUtilTypeormJs(
   /**
    * ${entityName}New, {id: 1}
    * @param ${entityName}New {Object:${entityUpdateString}}
-   * @param options
+   * @param options {Object:${entityUpdateString}}
    * @returns {Promise<${entityInsertString}>}
    */
   ${entityName}Update: async (${entityName}New, options) => {
@@ -246,7 +246,7 @@ function geneUtilTypeormJs(
   },
   /**
    * {select: {name: 'mary'}, where: {id: 1}}
-   * @param options {Object:${entityUpdateString}}
+   * @param options {select: ${entityUpdateString}, where: ${entityUpdateString}}
    * @returns {Promise<null|${entityInsertString}>}
    */
   ${entityName}FindOne: async (options) => {
@@ -255,10 +255,10 @@ function geneUtilTypeormJs(
   },
   /**
    * null or {select: {name: 'mary'}, where: {id: 1}}
-   * @param options
+   * @param options {null|{select: ${entityUpdateString}, where: ${entityUpdateString}}}
    * @returns {Promise<[${entityInsertString}]>}
    */
-  ${entityName}Find: async (options) => {
+  ${entityName}Find: async (options = null) => {
     if (options === null) {
       return ${dbTableString}.find();
     }else {
@@ -267,7 +267,7 @@ function geneUtilTypeormJs(
   },
   /**
    * {id: 1}
-   * @param options
+   * @param options {Object:${entityUpdateString}}
    * @returns {Promise<[${entityUpdateString}]>}
    */
   ${entityName}FindWhere: async (options) => {
@@ -275,7 +275,7 @@ function geneUtilTypeormJs(
   },
   /**
    * {name: 'mary'} to {name: Like('%mari%')}
-   * @param options
+   * @param options {Object:${entityUpdateString}}
    * @returns {Promise<[${entityInsertString}]>}
    */
   ${entityName}FindWhereLike: async (options) => {
@@ -317,7 +317,7 @@ module.exports = {
 }
 
 /**
- * generator datasource.js file
+ * generate datasource.js file
  * @param pathDirEntity
  * @param pathDirGeneFile
  */
@@ -334,6 +334,10 @@ const {
   getEntitySchemaList, 
 } = require('./util.datasource.js');
 
+// const path = require('path');
+// let databasePath = path.join('a', 'b', 'c', 'db.sqlite')
+// database: databasePath, // create db.sqlite in databasePath
+// database: 'db.sqlite', // create db.sqlite in rootDir
 const dataSource = new DataSource({
   type: 'better-sqlite3',
   database: 'db.sqlite',
@@ -373,7 +377,7 @@ module.exports = {
 }
 
 /**
- * generator util.datasource.js file
+ * generate util.datasource.js file
  * @param pathDirEntity
  * @param pathDirGeneFile
  */
