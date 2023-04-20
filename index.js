@@ -241,7 +241,7 @@ function geneUtilTypeormJs(
    * ${entityName}New, {id: 1} => update id=1
    *
    * ${entityName}New => update all
-   * @param ${entityName}New {Object:${entityUpdateString}}
+   * @param ${entityName}New {${entityUpdateString}}
    * @param options {{}|${entityUpdateString}}
    * @returns {Promise<UpdateResult>}
    */
@@ -274,6 +274,59 @@ function geneUtilTypeormJs(
     return options
       ? ${dbTableString}.find(options)
       : ${dbTableString}.find();
+  },
+  /**
+  * @param options {null|${entityUpdateString}} { firstName: "mary" }
+  * @return {Promise<number>}
+  */
+  ${entityName}Count: async (options = null) => {
+    return ${dbTableString}.countBy(options)
+  },
+  /**
+  * 
+  * @param columnName {string} "age"
+  * @param options {null|${entityUpdateString}} { firstName: "mary" }
+  * @return {Promise<number>}
+  */
+  ${entityName}Sum: async (columnName, options = null) => {
+    return ${dbTableString}.sum(columnName, options)
+  },
+  /**
+  * 
+  * @param columnName {string} "age"
+  * @param options {null|${entityUpdateString}} { firstName: "mary" }
+  * @return {Promise<number>}
+  */
+  ${entityName}Average: async (columnName, options = null) => {
+    return ${dbTableString}.average(columnName, options)
+  },
+  /**
+  * 
+  * @param columnName {string} "age"
+  * @param options {null|${entityUpdateString}} null or  { firstName: "mary" }
+  * @returns {Promise<{val:number, entity: ${entityReturnString}}>} val => min value, entity => has the min value
+  */
+  ${entityName}Minimum: async (columnName, options = null) => {
+    let key_ = columnName
+    let val = ${dbTableString}.minimum(columnName, options)
+    let findOption = \{\}
+    findOption[key_] = val
+    let entity = ${dbTableString}.findOneBy(findOption)
+    return {val, entity}
+  },
+  /**
+  * 
+  * @param columnName {string} "age"
+  * @param options {null|${entityUpdateString}} null or {firstName: "mary"}
+  * @returns {Promise<{val:number, entity: ${entityReturnString}}>} val => max value, entity => has the min value
+  */
+  ${entityName}Maximum: async (columnName, options = null) => {
+    let key_ = columnName
+    let val = ${dbTableString}.maximum(columnName, options)
+    let findOption = \{\}
+    findOption[key_] = val
+    let entity = ${dbTableString}.findOneBy(findOption)
+    return {val, entity}
   },
   
 `;

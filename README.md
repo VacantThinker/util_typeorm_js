@@ -104,7 +104,7 @@ const table = {
    * friendNew, {id: 1} => update id=1
    *
    * friendNew => update all
-   * @param friendNew {Object:{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}
+   * @param friendNew {{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}
    * @param options {{}|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}
    * @returns {Promise<UpdateResult>}
    */
@@ -138,6 +138,59 @@ const table = {
       ? await dataSource.getRepository('friend').find(options)
       : await dataSource.getRepository('friend').find();
   },
+  /**
+  * @param options {null|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }} { firstName: "mary" }
+  * @return {Promise<number>}
+  */
+  friendCount: async (options = null) => {
+    return await dataSource.getRepository('friend').countBy(options)
+  },
+  /**
+  * 
+  * @param columnName {string} "age"
+  * @param options {null|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }} { firstName: "mary" }
+  * @return {Promise<number>}
+  */
+  friendSum: async (columnName, options = null) => {
+    return await dataSource.getRepository('friend').sum(columnName, options)
+  },
+  /**
+  * 
+  * @param columnName {string} "age"
+  * @param options {null|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }} { firstName: "mary" }
+  * @return {Promise<number>}
+  */
+  friendAverage: async (columnName, options = null) => {
+    return await dataSource.getRepository('friend').average(columnName, options)
+  },
+  /**
+  * 
+  * @param columnName {string} "age"
+  * @param options {null|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }} null or  { firstName: "mary" }
+  * @returns {Promise<{val:number, entity: {id?: number, nickName: string, firstName: string, lastName: string, livein: string, }}>} val => min value, entity => has the min value
+  */
+  friendMinimum: async (columnName, options = null) => {
+    let key_ = columnName
+    let val = await dataSource.getRepository('friend').minimum(columnName, options)
+    let findOption = {}
+    findOption[key_] = val
+    let entity = await dataSource.getRepository('friend').findOneBy(findOption)
+    return {val, entity}
+  },
+  /**
+  * 
+  * @param columnName {string} "age"
+  * @param options {null|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }} null or {firstName: "mary"}
+  * @returns {Promise<{val:number, entity: {id?: number, nickName: string, firstName: string, lastName: string, livein: string, }}>} val => max value, entity => has the min value
+  */
+  friendMaximum: async (columnName, options = null) => {
+    let key_ = columnName
+    let val = await dataSource.getRepository('friend').maximum(columnName, options)
+    let findOption = {}
+    findOption[key_] = val
+    let entity = await dataSource.getRepository('friend').findOneBy(findOption)
+    return {val, entity}
+  },
   
 
 }
@@ -146,6 +199,79 @@ module.exports = {
   table: table
 }
 
+```
+
+#### in app.js (express)
+```javascript
+const express = require('express');
+const {table} = require('./util.typeorm');
+const {dbInitValue} = require('./datasource');
+const {Like} = require('typeorm');
+const app = express();
+
+// {
+//   "result": "ok",
+//   "data": {
+//     "val": 45,
+//     "entity": {
+//       "id": 45,
+//       "nickName": "jesica",
+//       "firstName": "jesica",
+//       "lastName": "",
+//       "livein": ""
+//     }
+//   }
+// }
+app.get('/maxid', async (req, res) => {
+
+  let obj = await table.friendMaximum(
+    'id',
+  );
+  console.log(`meslog number=\n`, obj);
+  res.status(200).send({result:'ok', data: obj});
+});
+
+// [
+//   {
+//     "firstName": "mary",
+//     "lastName": ""
+//   },
+//   {
+//     "firstName": "Ashley",
+//     "lastName": ""
+//   },
+//   {
+//     "firstName": "jesica",
+//     "lastName": ""
+//   }
+// ]
+app.get('/firendAll', async (req, res) => {
+  let arr = await table.friendFind({
+    select: {
+      firstName: true, lastName: true,
+    },
+  }); // SELECT "firstName", "lastName" FROM "friend"
+
+  console.log(`meslog arr=\n`, arr);
+
+  res.status(200).send(arr);
+
+});
+
+let port = 3000;
+let urlLocalhost = `http://localhost:${port}`;
+app.listen(port, async () => {
+  console.log(`app running ${urlLocalhost}`);
+  //init data of database
+  dbInitValue(async () => {
+    await table.friendInsert([
+      {nickName: 'mary', firstName: 'mary'},
+      {nickName: 'Ashley', firstName: 'Ashley'},
+      {nickName: 'jesica', firstName: 'jesica'},
+    ]);
+  });
+
+});
 ```
 
 #### datasource.js
@@ -205,66 +331,15 @@ module.exports = {
 
 ```
 
-#### in app.js (express)
-```javascript
-const express = require('express');
-const {table} = require('./util.typeorm');
-const {dbInitValue} = require('./datasource');
-const {Like} = require('typeorm');
-const app = express();
-
-app.get('/', async (req, res) => {
-  res.status(200).send('hello');
-});
-
-// http://localhost:3000/firendAll
-// [
-//   {
-//     "firstName": "mary",
-//     "lastName": ""
-//   },
-//   {
-//     "firstName": "Ashley",
-//     "lastName": ""
-//   },
-//   {
-//     "firstName": "jesica",
-//     "lastName": ""
-//   }
-// ]
-app.get('/firendAll', async (req, res) => {
-  let arr = await table.friendFind({
-    select: {
-      firstName: true, lastName: true,
-    },
-  }); // SELECT "firstName", "lastName" FROM "friend"
-
-  console.log(`meslog arr=\n`, arr);
-
-  res.status(200).send(arr);
-
-});
-
-let port = 3000;
-let urlLocalhost = `http://localhost:${port}`;
-app.listen(port, async () => {
-  console.log(`app running ${urlLocalhost}`);
-  //init data of database
-  dbInitValue(async () => {
-
-    await table.friendInsert([
-      {nickName: 'mary', firstName: 'mary'},
-      {nickName: 'Ashley', firstName: 'Ashley'},
-      {nickName: 'jesica', firstName: 'jesica'},
-    ]);
-  });
-
-});
-```
 
 ---
 
-# LICENSE
+## how to install ?
+```shell
+npm install @vacantthinker/util_typeorm_js -D
+```
+
+## LICENSE
 [MIT](/LICENSE)
 
 
