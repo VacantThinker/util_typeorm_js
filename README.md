@@ -1,13 +1,14 @@
 
+
 ## how to use ?
 
-#### example: dir
+#### sample: dir
 ```text
 xxxx-project/
   server/
     db/
       entity/
-        config.entity.js
+        friend.entity.js
       
       datasource.js         <== generate by xxx.js geneTypeormAll()
       util.datasource.js    <== generate by xxx.js geneTypeormAll()
@@ -16,30 +17,33 @@ xxxx-project/
   xxx.js  <== (node xxx.js)
 ```
 
-#### config.entity.js
+#### friend.entity.js
 ```javascript
 module.exports = {
-  name: 'config',
+  name: 'friend',
   columns: {
     id: {
       primary: true,
       type: 'int',
       generated: true,
     },
-    savelocation: {
+    nickName: {
       type: 'varchar', default: '',
     },
-    tmplocation: {
+    firstName: {
       type: 'varchar', default: '',
     },
-    appdatacache: {
+    lastName: {
+      type: 'varchar', default: '',
+    },
+    livein: {
       type: 'varchar', default: '',
     },
   },
 };
 ```
 
-#### in xxx.js
+#### xxx.js
 ```javascript
 // use default path
 const {geneTypeormAll} = require('@vacantthinker/util_typeorm_js');
@@ -48,6 +52,7 @@ geneTypeormAll(); // default: xxx-project/server/db/entity/
 ```javascript
 // use custom path
 const path = require('path');
+const {geneTypeormAll} = require('@vacantthinker/util_typeorm_js');
 
 let pathDirEntity = path.join(__dirname, 'entity');
 let pathDirGeneFile = path.join(__dirname, 'server', 'db');
@@ -63,125 +68,101 @@ node xxx.js
 
 ```javascript
 'use strict';
+      
 const {dataSource} = require('./datasource.js');
 
 const table = {
-
-  // config.entity.js
+  
+  // friend.entity.js
   // **************************************************************************
   /**
-   * config repo
+   * friend repo
    * @returns {Promise<Repository>}
    */
-  configRepo: async () => {
-    return await dataSource.getRepository('config');
+  friendRepo: async () => {
+    return await dataSource.getRepository('friend');
   },
   /**
-   * Insert config
-   * @param entityObj {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
-   * @returns {Promise<void>}
-   */
-  configInsert: async (entityObj) => {
-    await dataSource.getRepository('config').insert(entityObj);
-  },
-  /**
-   * {id: 1}
-   * @param options {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
-   * @returns {Promise<*>}
-   */
-  configDelete: async (options) => {
-    return await dataSource.getRepository('config').delete(options);
-  },
-  /**
-   * configNew, {id: 1}
-   * @param configNew {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
-   * @param options {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
-   * @returns {Promise<{id?: number, savelocation: string, tmplocation: string, appdatacache: string, }>}
-   */
-  configUpdate: async (configNew, options) => {
-    await dataSource.getRepository('config').update(options, configNew);
-    return await dataSource.getRepository('config').findOneBy(options);
-  },
-  /**
-   * {xxxxx: false}
+   * friendNew1 => insert friendNew1
    *
-   * @param configNew {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
-   * @returns {Promise<void>}
+   * [friendNew1, friendNew2, ...] => insert friendNew1, friendNew2, ...
+   * @param entityObj {[{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }]|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}
+   * @returns {Promise<InsertResult>}
    */
-  configUpdateAll: async (configNew) => {
-    await dataSource.getRepository('config').update({}, configNew);
+  friendInsert: async (entityObj) => {
+    return await dataSource.getRepository('friend').insert(entityObj);
   },
   /**
-   * {id: 1}
-   * @param options {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
-   * @returns {Promise<null|{id?: number, savelocation: string, tmplocation: string, appdatacache: string, }>}
+   * {id: 1} => delete id=1
+   * @param options {Object:{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}
+   * @returns {Promise<DeleteResult>}
    */
-  configFindOneWhere: async (options) => {
-    let ret = await dataSource.getRepository('config').findOneBy(options);
+  friendDelete: async (options) => {
+    return await dataSource.getRepository('friend').delete(options);
+  },
+  /**
+   * friendNew, {id: 1} => update id=1
+   *
+   * friendNew => update all
+   * @param friendNew {Object:{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}
+   * @param options {{}|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}
+   * @returns {Promise<UpdateResult>}
+   */
+  friendUpdate: async (friendNew, options = {}) => {
+    return await dataSource.getRepository('friend').update(options, friendNew);
+  },
+  /**
+   * {select: {firstName: true}, where: {id: 1}}
+   * 
+   * [typeorm/docs/find-options.md](https://github.com/typeorm/typeorm/blob/master/docs/find-options.md#find-options)
+   * @param options {{select: {nickName?: boolean, firstName?: boolean, lastName?: boolean, livein?: boolean, id?: boolean, }, where: {nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}}
+   * @returns {Promise<null|{id?: number, nickName: string, firstName: string, lastName: string, livein: string, }>}
+   */
+  friendFindOne: async (options) => {
+    let ret = await dataSource.getRepository('friend').findOne(options);
     return ret ? ret : null;
   },
   /**
-   * {select: {name: 'mary'}, where: {id: 1}}
-   * @param options {select: {savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }, where: {savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
-   * @returns {Promise<null|{id?: number, savelocation: string, tmplocation: string, appdatacache: string, }>}
+   * friendFind() => find all
+   * 
+   * friendFind({select: {firstName: true}})
+   * 
+   * friendFind({select: {firstName: true, lastName: true}, where: {nickName: Like('%mary%')}})
+   * 
+   * [typeorm/docs/find-options.md](https://github.com/typeorm/typeorm/blob/master/docs/find-options.md#find-options)
+   * @param options {null|{select: {nickName?: boolean, firstName?: boolean, lastName?: boolean, livein?: boolean, id?: boolean, }, where: {nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}}
+   * @returns {Promise<[{id?: number, nickName: string, firstName: string, lastName: string, livein: string, }]>}
    */
-  configFindOne: async (options) => {
-    let ret = await dataSource.getRepository('config').findOne(options);
-    return ret ? ret : null;
+  friendFind: async (options = null) => {
+    return options
+      ? await dataSource.getRepository('friend').find(options)
+      : await dataSource.getRepository('friend').find();
   },
-  /**
-   * null or {select: {name: 'mary'}, where: {id: 1}}
-   * @param options {null|{select: {savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }, where: {savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}}
-   * @returns {Promise<[{id?: number, savelocation: string, tmplocation: string, appdatacache: string, }]>}
-   */
-  configFind: async (options = null) => {
-    if (options === null) {
-      return await dataSource.getRepository('config').find();
-    }else {
-      return await dataSource.getRepository('config').find(options);
-    }
-  },
-  /**
-   * {id: 1}
-   * @param options {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
-   * @returns {Promise<[{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }]>}
-   */
-  configFindWhere: async (options) => {
-    return await dataSource.getRepository('config').findBy(options);
-  },
-  /**
-   * {name: 'mary'} to {name: Like('%mari%')}
-   * @param options {Object:{savelocation?: string, tmplocation?: string, appdatacache?: string, id?: number, }}
-   * @returns {Promise<[{id?: number, savelocation: string, tmplocation: string, appdatacache: string, }]>}
-   */
-  configFindWhereLike: async (options) => {
-    const searchKey = Object.keys(options)[0];
-    const searchVal = Object.values(options)[0];
-    options[searchKey] = Like(`%${searchVal}%`);
-    return await dataSource.getRepository('config').findBy(options);
-  },
+  
 
-};
+}
 
 module.exports = {
-  table: table,
-};
+  table: table
+}
 
 ```
 
 #### datasource.js
 ```javascript
 'use strict';
+      
 const {DataSource} = require('typeorm');
-const {getEntitySchemaList} = require('./util.datasource.js');
+const {
+  getEntitySchemaList, 
+} = require('./util.datasource.js');
 
-const entities = getEntitySchemaList();
 const dataSource = new DataSource({
   type: 'better-sqlite3',
   database: 'db.sqlite',
   synchronize: true,
-  logging: true,
-  entities,
+  logging: false,
+  entities: getEntitySchemaList(),
 });
 
 dataSource.initialize().then(() => {
@@ -195,23 +176,25 @@ module.exports = {
   dataSource: dataSource,
   dbInitValue: (callback) => {
     dataSource.initialize().then(async (connection) => {
-      callback(connection)
+      callback(connection);
     })
   }
 };
+
 ```
 
 #### util.datasource.js
 ```javascript
 'use strict';
-
+      
 function getEntitySchemaList() {
   const {EntitySchema} = require('typeorm');
   const entities = [];
+
+  const friendObj = require('./entity/friend.entity.js');
+  const friendEntitySchema = new EntitySchema(Object.create(friendObj));
+  entities.push(friendEntitySchema);
   
-  let configObj = require('./entity/config.entity.js');
-  let configEntitySchema = new EntitySchema(Object.create(configObj));
-  entities.push(configEntitySchema);
 
   return entities;
 }
@@ -224,33 +207,65 @@ module.exports = {
 
 #### in app.js (express)
 ```javascript
-// init data of database
-dbInitValue(async (connection) => {
-  let findOneBy = await connection.getRepository('config').findOneBy({id: 1});
-  if (findOneBy === null) {
-    let configObj = {xx, xxxxx};
-    connection.getRepository('config').save(configObj);
-  }
-})
+const express = require('express');
+const {table} = require('./util.typeorm');
+const {dbInitValue} = require('./datasource');
+const {Like} = require('typeorm');
+const app = express();
 
-app.get('/config/:name', async (req, res) => {
-  let {name} = req.params;
-  let config1 = {name};
-  await table.configSave(config1)
-
-  res.send(config1);
+app.get('/', async (req, res) => {
+  res.status(200).send('hello');
 });
 
-app.listen(3000, async () => {
-  console.log(`running 3000`);
+// http://localhost:3000/firendAll
+// [
+//   {
+//     "firstName": "mary",
+//     "lastName": ""
+//   },
+//   {
+//     "firstName": "Ashley",
+//     "lastName": ""
+//   },
+//   {
+//     "firstName": "jesica",
+//     "lastName": ""
+//   }
+// ]
+app.get('/firendAll', async (req, res) => {
+  let arr = await table.friendFind({
+    select: {
+      firstName: true, lastName: true,
+    },
+  }); // SELECT "firstName", "lastName" FROM "friend"
+
+  console.log(`meslog arr=\n`, arr);
+
+  res.status(200).send(arr);
+
+});
+
+let port = 3000;
+let urlLocalhost = `http://localhost:${port}`;
+app.listen(port, async () => {
+  console.log(`app running ${urlLocalhost}`);
+  //init data of database
+  dbInitValue(async () => {
+
+    await table.friendInsert([
+      {nickName: 'mary', firstName: 'mary'},
+      {nickName: 'Ashley', firstName: 'Ashley'},
+      {nickName: 'jesica', firstName: 'jesica'},
+    ]);
+  });
+
 });
 ```
 
 ---
 
-## how to install ?
-```shell
-npm install @vacantthinker/util_typeorm_js -D
-```
+# LICENSE
+[MIT](/LICENSE)
+
 
 

@@ -119,8 +119,25 @@ function findPrimaryKey(entityObj) {
   return {key_: find, value_: val};
 }
 
-function convertEntity(entityObj) {
-  let {key_: find, value_} = findPrimaryKey(entityObj);
+function convertEntityToSelectString(entityObj) {
+
+  let o = entityObj.columns;
+  let ret = [];
+  ret.push('{');
+  Object.keys(o).forEach((key_) => {
+    let jstype = 'boolean';
+    let arr = [`${key_}?`, ':', ' ', jstype, ',', ' '];
+    ret.push(...arr);
+  });
+  ret.push('}');
+  let reduce = ret.reduce((str, value) => {
+    return str.concat(value);
+  }, '');
+
+  return reduce;
+}
+
+function convertEntityToUpdateString(entityObj) {
 
   let o = entityObj.columns;
   let ret = [];
@@ -139,7 +156,7 @@ function convertEntity(entityObj) {
   return reduce;
 }
 
-function convertEntityToResultType(entityObj) {
+function convertEntityToReturnString(entityObj) {
   let {key_: find, value_} = findPrimaryKey(entityObj);
 
   let o = entityObj.columns;
@@ -184,9 +201,11 @@ function geneUtilTypeormJs(
     const entityObj = Object.assign({}, require(requirePath));
 
     const entityName = entityObj.name;
-    const entityInsertString = convertEntityToResultType(entityObj);
-    const entityUpdateString = convertEntity(entityObj);
+    const entityReturnString = convertEntityToReturnString(entityObj);
+    const entityUpdateString = convertEntityToUpdateString(entityObj);
+    const entitySelectString = convertEntityToSelectString(entityObj);
 
+    // `await dataSource.getRepository('${entityName}')`
     const dbTableString = `await dataSource.getRepository('${entityName}')`;
 
     const line =
@@ -201,88 +220,60 @@ function geneUtilTypeormJs(
     return ${dbTableString};
   },
   /**
-   * Insert ${entityName}
-   * @param entityObj {Object:${entityUpdateString}}
-   * @returns {Promise<void>}
+   * ${entityName}New1 => insert ${entityName}New1
+   *
+   * [${entityName}New1, ${entityName}New2, ...] => insert ${entityName}New1, ${entityName}New2, ...
+   * @param entityObj {[${entityUpdateString}]|${entityUpdateString}}
+   * @returns {Promise<InsertResult>}
    */
   ${entityName}Insert: async (entityObj) => {
-    ${dbTableString}.insert(entityObj);
+    return ${dbTableString}.insert(entityObj);
   },
   /**
-   * {id: 1}
+   * {id: 1} => delete id=1
    * @param options {Object:${entityUpdateString}}
-   * @returns {Promise<*>}
+   * @returns {Promise<DeleteResult>}
    */
   ${entityName}Delete: async (options) => {
     return ${dbTableString}.delete(options);
   },
   /**
-   * ${entityName}New, {id: 1}
+   * ${entityName}New, {id: 1} => update id=1
+   *
+   * ${entityName}New => update all
    * @param ${entityName}New {Object:${entityUpdateString}}
-   * @param options {Object:${entityUpdateString}}
-   * @returns {Promise<${entityInsertString}>}
+   * @param options {{}|${entityUpdateString}}
+   * @returns {Promise<UpdateResult>}
    */
-  ${entityName}Update: async (${entityName}New, options) => {
-    ${dbTableString}.update(options, ${entityName}New);
-    return ${dbTableString}.findOneBy(options);
+  ${entityName}Update: async (${entityName}New, options = \{\}) => {
+    return ${dbTableString}.update(options, ${entityName}New);
   },
   /**
-   * {xxxxx: false}
+   * {select: {firstName: true}, where: {id: 1}}
    * 
-   * @param ${entityName}New {Object:${entityUpdateString}}
-   * @returns {Promise<void>}
-   */
-  ${entityName}UpdateAll: async (${entityName}New) => {
-    ${dbTableString}.update({}, ${entityName}New);
-  },
-  /**
-   * {id: 1}
-   * @param options {Object:${entityUpdateString}}
-   * @returns {Promise<null|${entityInsertString}>}
-   */
-  ${entityName}FindOneWhere: async (options) => {
-    let ret = ${dbTableString}.findOneBy(options);
-    return ret ? ret : null;
-  },
-  /**
-   * {select: {name: 'mary'}, where: {id: 1}}
-   * @param options {select: ${entityUpdateString}, where: ${entityUpdateString}}
-   * @returns {Promise<null|${entityInsertString}>}
+   * [typeorm/docs/find-options.md](https://github.com/typeorm/typeorm/blob/master/docs/find-options.md#find-options)
+   * @param options {{select: ${entitySelectString}, where: ${entityUpdateString}}}
+   * @returns {Promise<null|${entityReturnString}>}
    */
   ${entityName}FindOne: async (options) => {
     let ret = ${dbTableString}.findOne(options);
     return ret ? ret : null;
   },
   /**
-   * null or {select: {name: 'mary'}, where: {id: 1}}
-   * @param options {null|{select: ${entityUpdateString}, where: ${entityUpdateString}}}
-   * @returns {Promise<[${entityInsertString}]>}
+   * ${entityName}Find() => find all
+   * 
+   * ${entityName}Find({select: {firstName: true}})
+   * 
+   * ${entityName}Find({select: {firstName: true, lastName: true}, where: {nickName: Like('%mary%')}})
+   * 
+   * [typeorm/docs/find-options.md](https://github.com/typeorm/typeorm/blob/master/docs/find-options.md#find-options)
+   * @param options {null|{select: ${entitySelectString}, where: ${entityUpdateString}}}
+   * @returns {Promise<[${entityReturnString}]>}
    */
   ${entityName}Find: async (options = null) => {
-    if (options === null) {
-      return ${dbTableString}.find();
-    }else {
-      return ${dbTableString}.find(options);
-    }
-  },
-  /**
-   * {id: 1}
-   * @param options {Object:${entityUpdateString}}
-   * @returns {Promise<[${entityUpdateString}]>}
-   */
-  ${entityName}FindWhere: async (options) => {
-    return ${dbTableString}.findBy(options);
-  },
-  /**
-   * {name: 'mary'} to {name: Like('%mari%')}
-   * @param options {Object:${entityUpdateString}}
-   * @returns {Promise<[${entityInsertString}]>}
-   */
-  ${entityName}FindWhereLike: async (options) => {
-    const searchKey = Object.keys(options)[0];
-    const searchVal = Object.values(options)[0];
-    options[searchKey] = Like(\`%\${searchVal}%\`);
-    return ${dbTableString}.findBy(options);
+    return options
+      ? ${dbTableString}.find(options)
+      : ${dbTableString}.find();
   },
   
 `;
@@ -294,7 +285,6 @@ function geneUtilTypeormJs(
     `'use strict';
       
 const {dataSource} = require('./datasource.js');
-const {Like} = require('typeorm');
 
 const table = {
   ${reduce}
@@ -334,10 +324,6 @@ const {
   getEntitySchemaList, 
 } = require('./util.datasource.js');
 
-// const path = require('path');
-// let databasePath = path.join('a', 'b', 'c', 'db.sqlite')
-// database: databasePath, // create db.sqlite in databasePath
-// database: 'db.sqlite', // create db.sqlite in rootDir
 const dataSource = new DataSource({
   type: 'better-sqlite3',
   database: 'db.sqlite',
