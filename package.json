@@ -1,6 +1,6 @@
 {
   "name": "@vacantthinker/util_typeorm_js",
-  "version": "1.0.11.9",
+  "version": "1.0.11.10",
   "description": " util typeorm js",
   "main": "index.js",
   "repository": {
@@ -10,6 +10,7 @@
   "keywords": [
     "util",
     "typeorm",
+    "better-sqlite3",
     "js",
     "generate typeorm file"
   ],

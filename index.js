@@ -206,7 +206,7 @@ function geneUtilTypeormJs(
 
   const reduce = handleTextArr(pathDirEntity, (filename) => {
     const requirePath = path.join(pathDirEntity, filename);
-    const entityObj = Object.assign({}, require(requirePath));
+    const entityObj = structuredClone(require(requirePath));
 
     const entityName = entityObj.name;
     const entityReturnString = convertEntityToReturnString(entityObj);
@@ -231,7 +231,7 @@ function geneUtilTypeormJs(
    * ${entityName}New1 => insert ${entityName}New1
    *
    * [${entityName}New1, ${entityName}New2, ...] => insert ${entityName}New1, ${entityName}New2, ...
-   * @param entityObj {[${entityUpdateString}]|${entityUpdateString}}
+   * @param ${entityName}New {[${entityUpdateString}]|${entityUpdateString}}
    * @returns {Promise<InsertResult>}
    */
   ${entityName}Insert: async (${entityName}New) => {
@@ -448,7 +448,7 @@ function geneUtilDataSourceJs(
   const dirName = stringList.string_entity;
   const reduce = handleTextArr(pathDirEntity, (filename) => {
     const requirePath = path.join(pathDirEntity, filename);
-    const entityObj = Object.assign({}, require(requirePath));
+    const entityObj = structuredClone(require(requirePath));
 
     const entityName = entityObj.name;
 
