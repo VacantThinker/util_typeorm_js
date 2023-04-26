@@ -8,7 +8,7 @@ xxxx-project/
   server/
     db/
       entity/
-        friend.entity.js
+        book.entity.js
       
       datasource.js         <== generate by xxx.js geneTypeormAll()
       util.datasource.js    <== generate by xxx.js geneTypeormAll()
@@ -17,27 +17,27 @@ xxxx-project/
   xxx.js  <== (node xxx.js)
 ```
 
-#### friend.entity.js
+#### book.entity.js
 ```javascript
 module.exports = {
-  name: 'friend',
+  name: 'book',
   columns: {
     id: {
       primary: true,
       type: 'int',
       generated: true,
     },
-    nickName: {
+    bookName: {
       type: 'varchar', default: '',
     },
-    firstName: {
+    author: {
       type: 'varchar', default: '',
     },
-    lastName: {
-      type: 'varchar', default: '',
+    publishYear: {
+      type: 'int', default: 0,
     },
-    livein: {
-      type: 'varchar', default: '',
+    pageNumber: {
+      type: 'int', default: 0,
     },
   },
 };
@@ -47,8 +47,12 @@ module.exports = {
 ```javascript
 // use default path
 const {geneTypeormAll} = require('@vacantthinker/util_typeorm_js');
-geneTypeormAll(); // default: xxx-project/server/db/entity/
+// pathDirEntity => default: yourproject/server/db/entity/
+// pathDirGeneFile => default: yourproject/server/db/
+// databaseName => default: {dirName: getRootDirName(), dbname: 'db.sqlite'}
+geneTypeormAll();
 ```
+
 ```javascript
 // use custom path
 const path = require('path');
@@ -56,7 +60,12 @@ const {geneTypeormAll} = require('@vacantthinker/util_typeorm_js');
 
 let pathDirEntity = path.join(__dirname, 'entity');
 let pathDirGeneFile = path.join(__dirname, 'server', 'db');
-geneTypeormAll(pathDirEntity, pathDirGeneFile,);
+geneTypeormAll(pathDirEntity, pathDirGeneFile, 
+    {
+      dirName: 'abc',
+      dbname: 'def.sqlite',
+    },
+);
 ```
 
 #### generate util.typeorm.js datasource.js util.datasource.js
@@ -73,122 +82,124 @@ const {dataSource} = require('./datasource.js');
 
 const table = {
   
-  // friend.entity.js
+  // book.entity.js
   // **************************************************************************
   /**
-   * friend repo
+   * book repo
    * @returns {Promise<Repository>}
    */
-  friendRepo: async () => {
-    return await dataSource.getRepository('friend');
+  bookRepo: async () => {
+    return await dataSource.getRepository('book');
   },
   /**
-   * friendNew1 => insert friendNew1
+   * bookNew1 => insert bookNew1
    *
-   * [friendNew1, friendNew2, ...] => insert friendNew1, friendNew2, ...
-   * @param entityObj {[{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }]|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}
+   * [bookNew1, bookNew2, ...] => insert bookNew1, bookNew2, ...
+   * @param entityObj {[{bookName?: string, author?: string, publishYear?: number, pageNumber?: number, id?: number, }]|{bookName?: string, author?: string, publishYear?: number, pageNumber?: number, id?: number, }}
    * @returns {Promise<InsertResult>}
    */
-  friendInsert: async (entityObj) => {
-    return await dataSource.getRepository('friend').insert(entityObj);
+  bookInsert: async (bookNew) => {
+    return await dataSource.getRepository('book').insert(bookNew);
   },
   /**
    * {id: 1} => delete id=1
-   * @param options {Object:{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}
+   *
+   * {author: 'mary'} => delete all author='mary'
+   * @param options {Object:{bookName?: string, author?: string, publishYear?: number, pageNumber?: number, id?: number, }}
    * @returns {Promise<DeleteResult>}
    */
-  friendDelete: async (options) => {
-    return await dataSource.getRepository('friend').delete(options);
+  bookDelete: async (options) => {
+    return await dataSource.getRepository('book').delete(options);
   },
   /**
-   * friendNew, {id: 1} => update id=1
+   * (bookNew, {id: 1}) // update bookNew where id=1
    *
-   * friendNew => update all
-   * @param friendNew {{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}
-   * @param options {{}|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}
+   * (bookNew) => update all
+   * @param bookNew {{bookName?: string, author?: string, publishYear?: number, pageNumber?: number, id?: number, }}
+   * @param options {{}|{bookName?: string, author?: string, publishYear?: number, pageNumber?: number, id?: number, }}
    * @returns {Promise<UpdateResult>}
    */
-  friendUpdate: async (friendNew, options = {}) => {
-    return await dataSource.getRepository('friend').update(options, friendNew);
+  bookUpdate: async (bookNew, options = {}) => {
+    return await dataSource.getRepository('book').update(options, bookNew);
   },
   /**
-   * {select: {firstName: true}, where: {id: 1}}
+   * {select: {bookName: true}, where: {id: 1}}
    * 
    * [typeorm/docs/find-options.md](https://github.com/typeorm/typeorm/blob/master/docs/find-options.md#find-options)
-   * @param options {{select: {nickName?: boolean, firstName?: boolean, lastName?: boolean, livein?: boolean, id?: boolean, }, where: {nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}}
-   * @returns {Promise<null|{id?: number, nickName: string, firstName: string, lastName: string, livein: string, }>}
+   * @param options {{select?: {bookName?: boolean, author?: boolean, publishYear?: boolean, pageNumber?: boolean, id?: boolean, }, where?: {bookName?: string, author?: string, publishYear?: number, pageNumber?: number, id?: number, }}}
+   * @returns {Promise<null|{id?: number, bookName: string, author: string, publishYear: number, pageNumber: number, }>}
    */
-  friendFindOne: async (options) => {
-    let ret = await dataSource.getRepository('friend').findOne(options);
+  bookFindOne: async (options) => {
+    let ret = await dataSource.getRepository('book').findOne(options);
     return ret ? ret : null;
   },
   /**
-   * friendFind() => find all
+   * bookFind() => find all
    * 
-   * friendFind({select: {firstName: true}})
+   * bookFind({select: {bookName: true}})
    * 
-   * friendFind({select: {firstName: true, lastName: true}, where: {nickName: Like('%mary%')}})
+   * bookFind({select: {bookName: true, xxxx: true}, where: {author: Like('%mary%')}})
    * 
    * [typeorm/docs/find-options.md](https://github.com/typeorm/typeorm/blob/master/docs/find-options.md#find-options)
-   * @param options {null|{select: {nickName?: boolean, firstName?: boolean, lastName?: boolean, livein?: boolean, id?: boolean, }, where: {nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }}}
-   * @returns {Promise<[{id?: number, nickName: string, firstName: string, lastName: string, livein: string, }]>}
+   * @param options {null|{select?: {bookName?: boolean, author?: boolean, publishYear?: boolean, pageNumber?: boolean, id?: boolean, }, where?: {bookName?: string, author?: string, publishYear?: number, pageNumber?: number, id?: number, }}}
+   * @returns {Promise<[{id?: number, bookName: string, author: string, publishYear: number, pageNumber: number, }]>}
    */
-  friendFind: async (options = null) => {
+  bookFind: async (options = null) => {
     return options
-      ? await dataSource.getRepository('friend').find(options)
-      : await dataSource.getRepository('friend').find();
+      ? await dataSource.getRepository('book').find(options)
+      : await dataSource.getRepository('book').find();
   },
   /**
-  * @param options {null|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }} { firstName: "mary" }
+  * @param options {null|{bookName?: string, author?: string, publishYear?: number, pageNumber?: number, id?: number, }} { author: "mary" }
   * @return {Promise<number>}
   */
-  friendCount: async (options = null) => {
-    return await dataSource.getRepository('friend').countBy(options)
+  bookCount: async (options = null) => {
+    return await dataSource.getRepository('book').countBy(options)
   },
   /**
   * 
-  * @param columnName {string} "age"
-  * @param options {null|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }} { firstName: "mary" }
+  * @param columnName {string} "pageNumber"
+  * @param options {null|{bookName?: string, author?: string, publishYear?: number, pageNumber?: number, id?: number, }} { author: "mary" }
   * @return {Promise<number>}
   */
-  friendSum: async (columnName, options = null) => {
-    return await dataSource.getRepository('friend').sum(columnName, options)
+  bookSum: async (columnName, options = null) => {
+    return await dataSource.getRepository('book').sum(columnName, options)
   },
   /**
   * 
-  * @param columnName {string} "age"
-  * @param options {null|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }} { firstName: "mary" }
+  * @param columnName {string} "pageNumber"
+  * @param options {null|{bookName?: string, author?: string, publishYear?: number, pageNumber?: number, id?: number, }} { author: "mary" }
   * @return {Promise<number>}
   */
-  friendAverage: async (columnName, options = null) => {
-    return await dataSource.getRepository('friend').average(columnName, options)
+  bookAverage: async (columnName, options = null) => {
+    return await dataSource.getRepository('book').average(columnName, options)
   },
   /**
   * 
-  * @param columnName {string} "age"
-  * @param options {null|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }} null or  { firstName: "mary" }
-  * @returns {Promise<{val:number, entity: {id?: number, nickName: string, firstName: string, lastName: string, livein: string, }}>} val => min value, entity => has the min value
+  * @param columnName {string} "publishYear"
+  * @param options {null|{bookName?: string, author?: string, publishYear?: number, pageNumber?: number, id?: number, }} null or  { author: "mary" }
+  * @returns {Promise<{val:number, entity: {id?: number, bookName: string, author: string, publishYear: number, pageNumber: number, }}>} val => min value, entity => has the min value
   */
-  friendMinimum: async (columnName, options = null) => {
+  bookMinimum: async (columnName, options = null) => {
     let key_ = columnName
-    let val = await dataSource.getRepository('friend').minimum(columnName, options)
+    let val = await dataSource.getRepository('book').minimum(columnName, options)
     let findOption = {}
     findOption[key_] = val
-    let entity = await dataSource.getRepository('friend').findOneBy(findOption)
+    let entity = await dataSource.getRepository('book').findOneBy(findOption)
     return {val, entity}
   },
   /**
   * 
-  * @param columnName {string} "age"
-  * @param options {null|{nickName?: string, firstName?: string, lastName?: string, livein?: string, id?: number, }} null or {firstName: "mary"}
-  * @returns {Promise<{val:number, entity: {id?: number, nickName: string, firstName: string, lastName: string, livein: string, }}>} val => max value, entity => has the min value
+  * @param columnName {string} "publishYear"
+  * @param options {null|{bookName?: string, author?: string, publishYear?: number, pageNumber?: number, id?: number, }} null or {author: "mary"}
+  * @returns {Promise<{val:number, entity: {id?: number, bookName: string, author: string, publishYear: number, pageNumber: number, }}>} val => max value, entity => has the min value
   */
-  friendMaximum: async (columnName, options = null) => {
+  bookMaximum: async (columnName, options = null) => {
     let key_ = columnName
-    let val = await dataSource.getRepository('friend').maximum(columnName, options)
+    let val = await dataSource.getRepository('book').maximum(columnName, options)
     let findOption = {}
     findOption[key_] = val
-    let entity = await dataSource.getRepository('friend').findOneBy(findOption)
+    let entity = await dataSource.getRepository('book').findOneBy(findOption)
     return {val, entity}
   },
   
@@ -212,64 +223,74 @@ const app = express();
 // {
 //   "result": "ok",
 //   "data": {
-//     "val": 45,
+//     "val": 1993,
 //     "entity": {
-//       "id": 45,
-//       "nickName": "jesica",
-//       "firstName": "jesica",
-//       "lastName": "",
-//       "livein": ""
+//       "id": 2,
+//       "bookName": "The Wonderful Wizard of Oz",
+//       "author": "L. Frank Baum",
+//       "publishYear": 1993,
+//       "pageNumber": 0
 //     }
 //   }
 // }
-app.get('/maxid', async (req, res) => {
+app.get('/max', async (req, res) => {
 
-  let obj = await table.friendMaximum(
-    'id',
+  let obj = await table.bookMaximum(
+    'publishYear',
   );
+  // let obj = null;
   console.log(`meslog number=\n`, obj);
-  res.status(200).send({result:'ok', data: obj});
+  res.status(200).send({result: 'ok', data: obj});
 });
 
 // [
 //   {
-//     "firstName": "mary",
-//     "lastName": ""
+//     "bookName": "TO KILL A MOCKINGBIRD",
+//     "author": "Harper Lee",
+//     "publishYear": 1960
 //   },
 //   {
-//     "firstName": "Ashley",
-//     "lastName": ""
-//   },
-//   {
-//     "firstName": "jesica",
-//     "lastName": ""
+//     "bookName": "The Wonderful Wizard of Oz",
+//     "author": "L. Frank Baum",
+//     "publishYear": 1993
 //   }
 // ]
-app.get('/firendAll', async (req, res) => {
-  let arr = await table.friendFind({
+app.get('/findAll', async (req, res) => {
+  let arr = await table.bookFind({
     select: {
-      firstName: true, lastName: true,
+      bookName: true, author: true, publishYear: true,
     },
-  }); // SELECT "firstName", "lastName" FROM "friend"
-
+  });
+  // let arr = null
   console.log(`meslog arr=\n`, arr);
 
   res.status(200).send(arr);
 
 });
 
+//init data of database
+dbInitValue(async () => {
+  await table.bookInsert([
+    {
+      bookName: 'TO KILL A MOCKINGBIRD',
+      author: 'Harper Lee',
+      publishYear: 1960,
+    },
+    {
+      bookName: 'The Wonderful Wizard of Oz',
+      author: 'L. Frank Baum',
+      publishYear: 1993,
+    },
+  ]);
+});
+
+
+//*******************************************************
+
 let port = 3000;
 let urlLocalhost = `http://localhost:${port}`;
 app.listen(port, async () => {
   console.log(`app running ${urlLocalhost}`);
-  //init data of database
-  dbInitValue(async () => {
-    await table.friendInsert([
-      {nickName: 'mary', firstName: 'mary'},
-      {nickName: 'Ashley', firstName: 'Ashley'},
-      {nickName: 'jesica', firstName: 'jesica'},
-    ]);
-  });
 
 });
 ```
@@ -281,11 +302,12 @@ app.listen(port, async () => {
 const {DataSource} = require('typeorm');
 const {
   getEntitySchemaList, 
+  getPathDatabase,
 } = require('./util.datasource.js');
 
 const dataSource = new DataSource({
   type: 'better-sqlite3',
-  database: 'db.sqlite',
+  database: getPathDatabase(),
   synchronize: true,
   logging: false,
   entities: getEntitySchemaList(),
@@ -312,21 +334,36 @@ module.exports = {
 #### util.datasource.js
 ```javascript
 'use strict';
-      
+
 function getEntitySchemaList() {
   const {EntitySchema} = require('typeorm');
   const entities = [];
 
-  const friendObj = require('./entity/friend.entity.js');
-  const friendEntitySchema = new EntitySchema(Object.create(friendObj));
-  entities.push(friendEntitySchema);
+  const bookObj = require('./entity/book.entity.js');
+  const bookEntitySchema = new EntitySchema(Object.create(bookObj));
+  entities.push(bookEntitySchema);
   
 
   return entities;
 }
 
+
+function getPathDatabase() {
+  const path = require('path');
+  let appDataPath = 
+    process.env.APPDATA 
+    || 
+    (process.platform === 'darwin' 
+      ? process.env.HOME + '/Library/Preferences' 
+      : process.env.HOME + "/.local/share");
+  
+  return path.join(appDataPath, "test", "db.sqlite");
+}
+
+
 module.exports = {
   getEntitySchemaList: getEntitySchemaList,
+  getPathDatabase: getPathDatabase,
 };
 
 ```

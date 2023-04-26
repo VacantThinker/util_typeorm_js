@@ -18,26 +18,33 @@ const stringList = {
 };
 
 /**
+ *
+ * @return {string}
+ */
+function databaseDefaultName() {
+  return 'db.sqlite';
+}
+
+/**
  * create an array, save text
  * @param pathTarget
- * @param callbacks
+ * @param callback
  * @returns {*}
  */
-function handleTextArr(pathTarget, ...callbacks) {
+function handleTextArr(pathTarget, callback) {
   const textArr = [];
 
   const filenameList = fs.readdirSync(pathTarget);
-  callbacks.forEach((callback) => {
-    filenameList.forEach((filename) => {
-      const text = callback(filename);
-      if (Array.isArray(text)) {
-        Array.from(text).forEach((value) => {
-          textArr.push(value);
-        });
-      } else {
-        textArr.push(text);
-      }
-    });
+  filenameList.forEach((filename) => {
+    const text = callback(filename);
+    if (Array.isArray(text)) {
+      Array.from(text).forEach((value) => {
+        textArr.push(value);
+      });
+    }
+    else {
+      textArr.push(text);
+    }
   });
 
   const reduce = textArr.reduce((str, value) => {
@@ -69,7 +76,8 @@ function getPathByLevelUp(
   const pathLevelUp = pathTarget.replace(basename, '');
   if (filename === null) {
     return pathLevelUp;
-  } else {
+  }
+  else {
     return path.join(pathLevelUp, filename);
   }
 }
@@ -89,7 +97,7 @@ function findPathTarget() {
   return pathTarget;
 }
 
-function convertType(dbtype) {
+function convertSqlTypeToJsType(dbtype) {
   const typeObj = {
     varchar: 'string',
     text: 'string',
@@ -144,7 +152,7 @@ function convertEntityToUpdateString(entityObj) {
   ret.push('{');
   Object.keys(o).forEach((key_) => {
     let val = o[String(key_)];
-    let jstype = convertType(val.type);
+    let jstype = convertSqlTypeToJsType(val.type);
     let arr = [`${key_}?`, ':', ' ', jstype, ',', ' '];
     ret.push(...arr);
   });
@@ -163,12 +171,12 @@ function convertEntityToReturnString(entityObj) {
   let ret = [];
   ret.push('{');
   delete entityObj.columns[find];
-  let arrPk = [`${find}?`, ':', ' ', convertType(value_.type), ',', ' '];
+  let arrPk = [`${find}?`, ':', ' ', convertSqlTypeToJsType(value_.type), ',', ' '];
   ret.push(...arrPk);
 
   Object.keys(o).forEach((key_) => {
     let val = o[String(key_)];
-    let jstype = convertType(val.type);
+    let jstype = convertSqlTypeToJsType(val.type);
     let arr = [key_, ':', ' ', jstype, ',', ' '];
     ret.push(...arr);
   });
@@ -226,11 +234,13 @@ function geneUtilTypeormJs(
    * @param entityObj {[${entityUpdateString}]|${entityUpdateString}}
    * @returns {Promise<InsertResult>}
    */
-  ${entityName}Insert: async (entityObj) => {
-    return ${dbTableString}.insert(entityObj);
+  ${entityName}Insert: async (${entityName}New) => {
+    return ${dbTableString}.insert(${entityName}New);
   },
   /**
    * {id: 1} => delete id=1
+   *
+   * {author: 'mary'} => delete all author='mary'
    * @param options {Object:${entityUpdateString}}
    * @returns {Promise<DeleteResult>}
    */
@@ -238,9 +248,9 @@ function geneUtilTypeormJs(
     return ${dbTableString}.delete(options);
   },
   /**
-   * ${entityName}New, {id: 1} => update id=1
+   * (${entityName}New, {id: 1}) // update ${entityName}New where id=1
    *
-   * ${entityName}New => update all
+   * (${entityName}New) => update all
    * @param ${entityName}New {${entityUpdateString}}
    * @param options {{}|${entityUpdateString}}
    * @returns {Promise<UpdateResult>}
@@ -249,10 +259,10 @@ function geneUtilTypeormJs(
     return ${dbTableString}.update(options, ${entityName}New);
   },
   /**
-   * {select: {firstName: true}, where: {id: 1}}
+   * {select: {bookName: true}, where: {id: 1}}
    * 
    * [typeorm/docs/find-options.md](https://github.com/typeorm/typeorm/blob/master/docs/find-options.md#find-options)
-   * @param options {{select: ${entitySelectString}, where: ${entityUpdateString}}}
+   * @param options {{select?: ${entitySelectString}, where?: ${entityUpdateString}}}
    * @returns {Promise<null|${entityReturnString}>}
    */
   ${entityName}FindOne: async (options) => {
@@ -262,12 +272,12 @@ function geneUtilTypeormJs(
   /**
    * ${entityName}Find() => find all
    * 
-   * ${entityName}Find({select: {firstName: true}})
+   * ${entityName}Find({select: {bookName: true}})
    * 
-   * ${entityName}Find({select: {firstName: true, lastName: true}, where: {nickName: Like('%mary%')}})
+   * ${entityName}Find({select: {bookName: true, xxxx: true}, where: {author: Like('%mary%')}})
    * 
    * [typeorm/docs/find-options.md](https://github.com/typeorm/typeorm/blob/master/docs/find-options.md#find-options)
-   * @param options {null|{select: ${entitySelectString}, where: ${entityUpdateString}}}
+   * @param options {null|{select?: ${entitySelectString}, where?: ${entityUpdateString}}}
    * @returns {Promise<[${entityReturnString}]>}
    */
   ${entityName}Find: async (options = null) => {
@@ -276,7 +286,7 @@ function geneUtilTypeormJs(
       : ${dbTableString}.find();
   },
   /**
-  * @param options {null|${entityUpdateString}} { firstName: "mary" }
+  * @param options {null|${entityUpdateString}} { author: "mary" }
   * @return {Promise<number>}
   */
   ${entityName}Count: async (options = null) => {
@@ -284,8 +294,8 @@ function geneUtilTypeormJs(
   },
   /**
   * 
-  * @param columnName {string} "age"
-  * @param options {null|${entityUpdateString}} { firstName: "mary" }
+  * @param columnName {string} "pageNumber"
+  * @param options {null|${entityUpdateString}} { author: "mary" }
   * @return {Promise<number>}
   */
   ${entityName}Sum: async (columnName, options = null) => {
@@ -293,8 +303,8 @@ function geneUtilTypeormJs(
   },
   /**
   * 
-  * @param columnName {string} "age"
-  * @param options {null|${entityUpdateString}} { firstName: "mary" }
+  * @param columnName {string} "pageNumber"
+  * @param options {null|${entityUpdateString}} { author: "mary" }
   * @return {Promise<number>}
   */
   ${entityName}Average: async (columnName, options = null) => {
@@ -302,8 +312,8 @@ function geneUtilTypeormJs(
   },
   /**
   * 
-  * @param columnName {string} "age"
-  * @param options {null|${entityUpdateString}} null or  { firstName: "mary" }
+  * @param columnName {string} "publishYear"
+  * @param options {null|${entityUpdateString}} null or  { author: "mary" }
   * @returns {Promise<{val:number, entity: ${entityReturnString}}>} val => min value, entity => has the min value
   */
   ${entityName}Minimum: async (columnName, options = null) => {
@@ -316,8 +326,8 @@ function geneUtilTypeormJs(
   },
   /**
   * 
-  * @param columnName {string} "age"
-  * @param options {null|${entityUpdateString}} null or {firstName: "mary"}
+  * @param columnName {string} "publishYear"
+  * @param options {null|${entityUpdateString}} null or {author: "mary"}
   * @returns {Promise<{val:number, entity: ${entityReturnString}}>} val => max value, entity => has the min value
   */
   ${entityName}Maximum: async (columnName, options = null) => {
@@ -349,7 +359,7 @@ module.exports = {
 `;
 
   if (pathDirGeneFile === null) {
-    pathDirGeneFile = getPathByLevelUp(pathDirEntity)
+    pathDirGeneFile = getPathByLevelUp(pathDirEntity);
   }
 
   const file = path.join(pathDirGeneFile,
@@ -375,11 +385,12 @@ function geneDataSourceJs(
 const {DataSource} = require('typeorm');
 const {
   getEntitySchemaList, 
+  getPathDatabase,
 } = require('./util.datasource.js');
 
 const dataSource = new DataSource({
   type: 'better-sqlite3',
-  database: 'db.sqlite',
+  database: getPathDatabase(),
   synchronize: true,
   logging: false,
   entities: getEntitySchemaList(),
@@ -419,10 +430,16 @@ module.exports = {
  * generate util.datasource.js file
  * @param pathDirEntity
  * @param pathDirGeneFile
+ * @param databaseName {String | { dirName:String, dbname: String}}
  */
 function geneUtilDataSourceJs(
   pathDirEntity = null,
   pathDirGeneFile = null,
+  databaseName =
+    {
+      dirName: getRootDirName(),
+      dbname: databaseDefaultName(),
+    },
 ) {
   if (pathDirEntity === null) {
     pathDirEntity = findPathTarget();
@@ -445,9 +462,42 @@ function geneUtilDataSourceJs(
     return line;
   });
 
+  if (databaseName === null) {
+    databaseName = {
+      dirName: getRootDirName(),
+      dbname: databaseDefaultName(),
+    };
+  }
+
+  let textGetDatabasePath = null;
+  if (typeof databaseName === 'string') {
+    textGetDatabasePath = `
+function getPathDatabase() {
+  return "${databaseName}"
+}
+    `;
+  }
+  else if (typeof databaseName === 'object') {
+    let {dirName, dbname} = databaseName;
+
+    textGetDatabasePath = `
+function getPathDatabase() {
+  const path = require('path');
+  let appDataPath = 
+    process.env.APPDATA 
+    || 
+    (process.platform === 'darwin' 
+      ? process.env.HOME + '/Library/Preferences' 
+      : process.env.HOME + "/.local/share");
+  
+  return path.join(appDataPath, "${dirName}", "${dbname}");
+}
+`;
+  }
+
   const text =
     `'use strict';
-      
+
 function getEntitySchemaList() {
   const {EntitySchema} = require('typeorm');
   const entities = [];
@@ -456,13 +506,16 @@ ${reduce}
   return entities;
 }
 
+${textGetDatabasePath}
+
 module.exports = {
   getEntitySchemaList: getEntitySchemaList,
+  getPathDatabase: getPathDatabase,
 };
 `;
 
   if (pathDirGeneFile === null) {
-    pathDirGeneFile = getPathByLevelUp(pathDirEntity)
+    pathDirGeneFile = getPathByLevelUp(pathDirEntity);
   }
 
   const file = path.join(pathDirGeneFile,
@@ -472,31 +525,62 @@ module.exports = {
   console.log(`text=\n`, text, `\n`);
 }
 
+function getRootDirName() {
+  let cwd = process.cwd();
+  let rootDirName = path.basename(cwd);
+  return rootDirName;
+}
+
 /**
  *
  * default: xxx-project/server/db/entity/
  *
- * please make sure you have entity/ dir
+ * read entity dir files. eg: book.entity.js
  *
- * eg: entity/config.entity.js
+ * ********************************************************
+ *
+ * databaseName eg: 'db.sqlite' ==> yourproject/db.sqlite
+ *
+ * ********************************************************
+ *
+ * databaseName eg: {dirName: 'x-project',databaseName: 'db.sqlite'}
+ *
+ * ==> appdata/x-project/db.sqlite
+ *
+ * appdata dir :
+ *
+ * OS X - '/Users/user/Library/Preferences'
+ *
+ * Windows 8 - 'C:\Users\user\AppData\Roaming'
+ *
+ * Windows XP - 'C:\Documents and Settings\user\Application Data'
+ *
+ * Linux - '/home/user/.local/share'
  *
  * @param pathDirEntity entity dir path
  * @param pathDirGeneFile
+ * @param databaseName {String | { dirName:String, dbname: String}}
  */
 function geneTypeormAll(
   pathDirEntity = null,
-  pathDirGeneFile = null
+  pathDirGeneFile = null,
+  databaseName =
+    {
+      dirName: getRootDirName(),
+      dbname: databaseDefaultName(),
+    },
 ) {
 
   geneDataSourceJs(pathDirEntity, pathDirGeneFile);
-  geneUtilDataSourceJs(pathDirEntity, pathDirGeneFile);
+  geneUtilDataSourceJs(pathDirEntity, pathDirGeneFile, databaseName);
   geneUtilTypeormJs(pathDirEntity, pathDirGeneFile);
 }
 
 module.exports = {
   geneTypeormAll: geneTypeormAll,
+
+  //***************************************
   geneDataSourceJs: geneDataSourceJs,
   geneUtilDataSourceJs: geneUtilDataSourceJs,
-
   geneUtilTypeormJs: geneUtilTypeormJs,
 };
